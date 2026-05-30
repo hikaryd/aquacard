@@ -32,4 +32,38 @@ object CardFormat {
     /** Эмулировать можно только карты, чей IDm начинается с 02FE (ограничение Android HCE-F). */
     fun isEmulatable(idmHex: String): Boolean =
         idmHex.uppercase(Locale.ROOT).startsWith("02FE")
+
+    private const val HEX = "0123456789ABCDEF"
+
+    /** 16-hex -> как есть; 12-hex -> 02FE+суффикс; иначе null. */
+    private fun hexToIdm(s: String): String? {
+        val up = s.uppercase(Locale.ROOT)
+        return when {
+            up.length == 16 && up.all { it in HEX } -> up
+            up.length == 12 && up.all { it in HEX } -> "02FE$up"
+            else -> null
+        }
+    }
+
+    /**
+     * Умный разбор «номера карты»: принимает то, что удобно скопировать из eamemu или AquaDX:
+     *  - IDm: 16 hex, либо 12-hex суффикс (02FE добавится сам); двоеточия/пробелы/дефисы игнорируются;
+     *  - 20-значный Access Code (с пробелами или без);
+     *  - eamemu-JSON: {"sid":"02FE…"} (в т.ч. внутри массива).
+     * Возвращает 16-hex IDm или null.
+     */
+    fun idmFromAny(raw: String): String? {
+        Regex("\"sid\"\\s*:\\s*\"([0-9A-Fa-f]{12,16})\"").find(raw)?.let { m ->
+            hexToIdm(m.groupValues[1])?.let { return it }
+        }
+        val cleaned = raw.filterNot { it.isWhitespace() || it == ':' || it == '-' }
+        hexToIdm(cleaned)?.let { return it }
+        val digits = raw.filter { it.isDigit() }
+        if (digits.length == 20) return idmFromAccessCode(digits)
+        return null
+    }
+
+    /** Имя карты из eamemu-JSON {"name":"…"} — для авто-подстановки при импорте. */
+    fun nameFromImport(raw: String): String? =
+        Regex("\"name\"\\s*:\\s*\"([^\"]*)\"").find(raw)?.groupValues?.get(1)?.takeIf { it.isNotBlank() }
 }

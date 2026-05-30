@@ -2,9 +2,7 @@
 
 package net.aquadx.aquacard.ui.screens.profile
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -12,9 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -24,12 +20,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import java.util.Locale
 import net.aquadx.aquacard.data.AquaUser
 import net.aquadx.aquacard.data.GameSummary
@@ -38,7 +32,7 @@ import net.aquadx.aquacard.data.UserDetailDto
 import net.aquadx.aquacard.ui.theme.AquaCardTheme
 
 @Composable
-fun ProfileHeader(summary: GameSummary, detail: UserDetailDto?, game: String) {
+fun ProfileHeader(summary: GameSummary, detail: UserDetailDto?, baseUrl: String) {
     val displayName = summary.aquaUser?.displayName?.takeIf { it.isNotBlank() }
         ?: summary.aquaUser?.username
         ?: summary.name
@@ -53,7 +47,7 @@ fun ProfileHeader(summary: GameSummary, detail: UserDetailDto?, game: String) {
     ) {
         Column(Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AvatarCircle(displayName)
+                PlayerAvatar(baseUrl, summary.aquaUser?.profilePicture, displayName)
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -81,7 +75,7 @@ fun ProfileHeader(summary: GameSummary, detail: UserDetailDto?, game: String) {
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        ScoreFormat.formatRating(game, rating),
+                        ScoreFormat.formatRating(rating),
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -111,7 +105,7 @@ fun ProfileHeader(summary: GameSummary, detail: UserDetailDto?, game: String) {
 
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 StatCell("Игр", summary.plays?.toString() ?: "—")
-                StatCell("Макс", summary.ratingHighest?.let { ScoreFormat.formatRating(game, it) } ?: "—")
+                StatCell("Макс", summary.ratingHighest?.let { ScoreFormat.formatRating(it) } ?: "—")
                 StatCell("Ранг", summary.serverRank?.let { "#$it" } ?: "—")
                 StatCell("Точность", summary.accuracy?.let { String.format(Locale.US, "%.2f%%", it) } ?: "—")
             }
@@ -125,24 +119,6 @@ fun ProfileHeader(summary: GameSummary, detail: UserDetailDto?, game: String) {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun AvatarCircle(displayName: String) {
-    Box(
-        modifier = Modifier
-            .size(56.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.primary),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            initials(displayName),
-            color = MaterialTheme.colorScheme.onPrimary,
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp
-        )
     }
 }
 
@@ -165,15 +141,6 @@ private fun RowScope.StatCell(label: String, value: String) {
     }
 }
 
-private fun initials(name: String): String {
-    val parts = name.trim().split(' ', '　').filter { it.isNotBlank() }
-    return when {
-        parts.isEmpty() -> "?"
-        parts.size == 1 -> parts[0].take(2).uppercase()
-        else -> (parts[0].take(1) + parts[1].take(1)).uppercase()
-    }
-}
-
 @Preview
 @Composable
 private fun ProfileHeaderPreview() {
@@ -186,7 +153,7 @@ private fun ProfileHeaderPreview() {
                 plays = 2795, maxCombo = 1282, fullCombo = 140, allPerfect = 111
             ),
             detail = UserDetailDto(playerRating = 16666),
-            game = "mai2"
+            baseUrl = "https://aquadx.net/aqua"
         )
     }
 }

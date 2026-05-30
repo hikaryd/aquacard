@@ -25,14 +25,16 @@ import net.aquadx.aquacard.data.ScoreFormat
 import net.aquadx.aquacard.ui.theme.AquaCardTheme
 
 @Composable
-fun RecentRow(entry: RecentEntry, meta: Map<Int, MusicMeta>) {
+fun RecentRow(entry: RecentEntry, meta: Map<Int, MusicMeta>, baseUrl: String) {
     Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            JacketImage(baseUrl, entry.musicId, size = 44.dp)
+            Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     ScoreFormat.songName(meta, entry.musicId),
@@ -42,7 +44,7 @@ fun RecentRow(entry: RecentEntry, meta: Map<Int, MusicMeta>) {
                 )
                 Text(
                     buildString {
-                        append(levelLabel(entry))
+                        append(ScoreFormat.levelName(entry.level))
                         entry.playDate?.let { append(" · "); append(shortDate(it)) }
                     },
                     style = MaterialTheme.typography.labelSmall,
@@ -51,7 +53,7 @@ fun RecentRow(entry: RecentEntry, meta: Map<Int, MusicMeta>) {
             }
             Spacer(Modifier.width(8.dp))
             Text(
-                valueLabel(entry),
+                ScoreFormat.achievementPercent(entry.achievement),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Monospace,
@@ -59,16 +61,6 @@ fun RecentRow(entry: RecentEntry, meta: Map<Int, MusicMeta>) {
             )
         }
     }
-}
-
-private fun levelLabel(entry: RecentEntry): String = when (entry) {
-    is RecentEntry.Mai -> ScoreFormat.levelName("mai2", entry.level)
-    is RecentEntry.Chu -> ScoreFormat.levelName("chu3", entry.level)
-}
-
-private fun valueLabel(entry: RecentEntry): String = when (entry) {
-    is RecentEntry.Mai -> ScoreFormat.achievementPercent(entry.achievement)
-    is RecentEntry.Chu -> ScoreFormat.chuScore(entry.score)
 }
 
 /** Берём дату без времени: "2025-11-25T02:42:14" -> "2025-11-25". */
@@ -80,13 +72,16 @@ private fun shortDate(raw: String): String =
 private fun RecentRowPreview() {
     AquaCardTheme {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(12.dp)) {
+            val base = "https://aquadx.net/aqua"
             RecentRow(
-                RecentEntry.Mai(834, 3, "2026-05-29T20:11:00", achievement = 1004210, rank = 13, comboStatus = 1, isClear = true),
-                mapOf(834 to MusicMeta(name = "Oshama Scramble!"))
+                RecentEntry(834, 3, "2026-05-29T20:11:00", achievement = 1004210, rank = 13, comboStatus = 1, isClear = true),
+                mapOf(834 to MusicMeta(name = "Oshama Scramble!")),
+                base
             )
             RecentRow(
-                RecentEntry.Chu(2252, 2, "2025-11-25T02:42:14", score = 806267, rank = 4),
-                mapOf(2252 to MusicMeta(name = "Trichromatic"))
+                RecentEntry(11, 2, "2025-11-25T02:42:14", achievement = 980000, rank = 4, comboStatus = 1, isClear = true),
+                mapOf(11 to MusicMeta(name = "Trichromatic")),
+                base
             )
         }
     }

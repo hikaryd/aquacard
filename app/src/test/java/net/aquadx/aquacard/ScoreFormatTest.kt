@@ -16,45 +16,40 @@ class ScoreFormatTest {
 
     @Test
     fun levelIndex_3_is_MASTER() {
-        assertEquals("MASTER", ScoreFormat.levelName("mai2", 3))
-        assertEquals("Re:MASTER", ScoreFormat.levelName("mai2", 4))
-        assertEquals("ULTIMA", ScoreFormat.levelName("chu3", 4))
-        assertEquals("?", ScoreFormat.levelName("mai2", null))
+        assertEquals("MASTER", ScoreFormat.levelName(3))
+        assertEquals("Re:MASTER", ScoreFormat.levelName(4))
+        assertEquals("?", ScoreFormat.levelName(null))
     }
 
     @Test
     fun bestTuple_mai_parses() {
-        val e = ScoreFormat.parseBestTuple("mai2", listOf("834", "4", "19998", "1008790"))!!
+        val e = ScoreFormat.parseBestTuple(listOf("834", "4", "19998", "1008790"))!!
         assertEquals(834, e.musicId)
         assertEquals(4, e.level)
         assertEquals(1008790, e.value)
     }
 
     @Test
-    fun bestTuple_chu_parses() {
-        val e = ScoreFormat.parseBestTuple("chu3", listOf("2422", "2", "993344"))!!
-        assertEquals(2422, e.musicId)
-        assertEquals(2, e.level)
-        assertEquals(993344, e.value)
-    }
-
-    @Test
     fun bestTuple_shortAndLong_doNotThrow() {
-        // Слишком короткий для mai (нужен индекс 3) -> null, без исключения
-        assertNull(ScoreFormat.parseBestTuple("mai2", listOf("834")))
+        // Слишком короткий (нужен индекс 3) -> null, без исключения
+        assertNull(ScoreFormat.parseBestTuple(listOf("834")))
         // Пустой -> null
-        assertNull(ScoreFormat.parseBestTuple("chu3", emptyList()))
-        // Длиннее ожидаемого -> читаем нужный индекс, не падаем
-        val long = ScoreFormat.parseBestTuple("mai2", listOf("1", "2", "3", "4", "5", "6"))
+        assertNull(ScoreFormat.parseBestTuple(emptyList()))
+        // Длиннее ожидаемого -> читаем индекс 3, не падаем
+        val long = ScoreFormat.parseBestTuple(listOf("1", "2", "3", "4", "5", "6"))
         assertEquals(1, long?.musicId)
         assertEquals(4, long?.value)
     }
 
     @Test
-    fun formatRating_perGame() {
-        assertEquals("16666", ScoreFormat.formatRating("mai2", 16666))
-        assertEquals("17.00", ScoreFormat.formatRating("chu3", 1700))
-        assertEquals("—", ScoreFormat.formatRating("mai2", null))
+    fun formatRating_isRawInt() {
+        assertEquals("16666", ScoreFormat.formatRating(16666))
+        assertEquals("—", ScoreFormat.formatRating(null))
+    }
+
+    @Test
+    fun bestValueLabel_isPercent() {
+        assertEquals("100.8790%", ScoreFormat.bestValueLabel(1008790))
     }
 
     @Test

@@ -40,4 +40,35 @@ class CardFormatTest {
         assertTrue(CardFormat.isEmulatable("02FE000000000001"))
         assertFalse(CardFormat.isEmulatable("012E1A2B3C4D5E6F"))
     }
+
+    @Test
+    fun idmFromAny_acceptsAllConvenientFormats() {
+        // 16-hex IDm как есть
+        assertEquals("02FE000000000001", CardFormat.idmFromAny("02FE000000000001"))
+        // lowercase
+        assertEquals("02FEDEADBEEF1234", CardFormat.idmFromAny("02fedeadbeef1234"))
+        // Serial с двоеточиями
+        assertEquals("02FEDEADBEEF1234", CardFormat.idmFromAny("02:FE:DE:AD:BE:EF:12:34"))
+        // 12-hex суффикс -> добавляется 02FE
+        assertEquals("02FEDEADBEEF1234", CardFormat.idmFromAny("DEADBEEF1234"))
+        // 20-значный Access Code (с пробелами и без)
+        assertEquals("02FE000000000001", CardFormat.idmFromAny("00215609832160362497"))
+        assertEquals("02FE000000000001", CardFormat.idmFromAny("0021 5609 8321 6036 2497"))
+        // eamemu-JSON: объект и массив
+        assertEquals("02FEDEADBEEF1234", CardFormat.idmFromAny("""{"name":"My Aime","sid":"02FEDEADBEEF1234","image":"#7C9CFF"}"""))
+        assertEquals("02FE000000000001", CardFormat.idmFromAny("""[{"name":"A","sid":"02FE000000000001"}]"""))
+    }
+
+    @Test
+    fun idmFromAny_rejectsGarbage() {
+        assertNull(CardFormat.idmFromAny("hello world"))
+        assertNull(CardFormat.idmFromAny("123"))
+        assertNull(CardFormat.idmFromAny(""))
+    }
+
+    @Test
+    fun nameFromImport_extractsEamemuName() {
+        assertEquals("My Aime", CardFormat.nameFromImport("""{"name":"My Aime","sid":"02FE000000000001"}"""))
+        assertNull(CardFormat.nameFromImport("02FE000000000001"))
+    }
 }

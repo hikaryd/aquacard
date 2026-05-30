@@ -3,16 +3,15 @@ package net.aquadx.aquacard.data
 import java.util.Locale
 
 /**
- * Чистые null-safe форматтеры кодировок AquaDX (docs/aquadx-api-spec.md §5).
+ * Чистые null-safe форматтеры кодировок maimai (docs/aquadx-api-spec.md §5).
  * Доступ к позиционным кортежам best* через getOrNull — устойчивость к дрейфу длины.
- * Все числовые форматы — Locale.US, чтобы разделитель был точкой независимо от локали устройства.
+ * Числовые форматы — Locale.US, чтобы разделитель был точкой независимо от локали.
  */
 object ScoreFormat {
 
     private val MAI_LEVELS = listOf("BASIC", "ADVANCED", "EXPERT", "MASTER", "Re:MASTER")
-    private val CHU_LEVELS = listOf("BASIC", "ADVANCED", "EXPERT", "MASTER", "ULTIMA", "WORLD'S END")
 
-    /** mai2 achievement = % × 10000. 1008790 -> "100.8790%". */
+    /** achievement = % × 10000. 1008790 -> "100.8790%". */
     fun achievementPercent(achievement: Int?): String {
         if (achievement == null) return "—"
         val whole = achievement / 10000
@@ -20,12 +19,9 @@ object ScoreFormat {
         return String.format(Locale.US, "%d.%04d%%", whole, frac)
     }
 
-    fun chuScore(score: Int?): String = score?.toString() ?: "—"
-
-    fun levelName(game: String, level: Int?): String {
+    fun levelName(level: Int?): String {
         if (level == null) return "?"
-        val list = if (game == "chu3") CHU_LEVELS else MAI_LEVELS
-        return list.getOrNull(level) ?: "LV$level"
+        return MAI_LEVELS.getOrNull(level) ?: "LV$level"
     }
 
     /** Буква-ранг maimai по achievement (порог 100.5% = 1005000 и ниже). */
@@ -51,29 +47,24 @@ object ScoreFormat {
         1 -> "FS"; 2 -> "FS+"; 3 -> "FDX"; 4 -> "FDX+"; else -> null
     }
 
-    /** maimai rating — целое как есть (16666); chunithm playerRating ×100 (52 -> 0.52). */
-    fun formatRating(game: String, rating: Int?): String {
-        if (rating == null) return "—"
-        return if (game == "chu3") String.format(Locale.US, "%.2f", rating / 100.0) else rating.toString()
-    }
+    /** maimai rating — целое как есть (16666). */
+    fun formatRating(rating: Int?): String = rating?.toString() ?: "—"
 
     /** Название песни по musicId с фолбэком на сам id, если метаданных нет. */
     fun songName(meta: Map<Int, MusicMeta>, musicId: Int): String =
         meta[musicId]?.name?.takeIf { it.isNotBlank() } ?: musicId.toString()
 
     /**
-     * Парс позиционного кортежа Best. mai2: [musicId, levelIndex, v3, achievement] (4);
-     * chu3: [musicId, levelIndex, score] (3). Любая нехватка элементов -> null, без исключений.
+     * Парс позиционного кортежа Best maimai: [musicId, levelIndex, v3, achievement] (4 элемента).
+     * Любая нехватка элементов -> null, без исключений (getOrNull).
      */
-    fun parseBestTuple(game: String, tuple: List<String>): BestEntry? {
+    fun parseBestTuple(tuple: List<String>): BestEntry? {
         val musicId = tuple.getOrNull(0)?.toIntOrNull() ?: return null
         val level = tuple.getOrNull(1)?.toIntOrNull() ?: 0
-        val valueIndex = if (game == "chu3") 2 else 3
-        val value = tuple.getOrNull(valueIndex)?.toIntOrNull() ?: return null
+        val value = tuple.getOrNull(3)?.toIntOrNull() ?: return null
         return BestEntry(musicId, level, value)
     }
 
-    /** Текст значения Best: chu3 — сырой скор, иначе achievement как процент. */
-    fun bestValueLabel(game: String, value: Int): String =
-        if (game == "chu3") value.toString() else achievementPercent(value)
+    /** Текст значения Best: achievement как процент. */
+    fun bestValueLabel(value: Int): String = achievementPercent(value)
 }

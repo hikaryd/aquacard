@@ -2,7 +2,7 @@ package net.aquadx.aquacard
 
 import kotlinx.serialization.decodeFromString
 import net.aquadx.aquacard.data.AquaApi
-import net.aquadx.aquacard.data.GameSummaryResponse
+import net.aquadx.aquacard.data.GameSummary
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -18,7 +18,7 @@ class ApiParseTest {
             "totalScore":1027767,"unknownFutureField":true}
         """.trimIndent()
 
-        val r = AquaApi.json.decodeFromString<GameSummaryResponse>(fixture)
+        val r = AquaApi.json.decodeFromString<GameSummary>(fixture)
 
         assertEquals("Sigma", r.aquaUser?.username)
         assertEquals(1748046905871L, r.aquaUser?.regTime)

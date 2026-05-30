@@ -27,11 +27,11 @@ private class FakeProfileService(
     val userGamesFn: () -> Map<String, GameBrief?> = { emptyMap() },
     val allMusicFn: () -> Map<String, MusicMeta> = { emptyMap() }
 ) : AquaProfileService {
-    override suspend fun summary(game: String, username: String) = summaryFn()
-    override suspend fun detail(game: String, username: String) = detailFn()
-    override suspend fun rating(game: String, username: String) = ratingFn()
-    override suspend fun recent(game: String, username: String) = recentFn()
-    override suspend fun trend(game: String, username: String) = trendFn()
+    override suspend fun summary(username: String) = summaryFn()
+    override suspend fun detail(username: String) = detailFn()
+    override suspend fun rating(username: String) = ratingFn()
+    override suspend fun recent(username: String) = recentFn()
+    override suspend fun trend(username: String) = trendFn()
     override suspend fun userGames(username: String) = userGamesFn()
     override suspend fun allMusic(url: String) = allMusicFn()
 }
@@ -53,7 +53,7 @@ class ProfileRepositoryTest {
             },
             trendFn = { throw RuntimeException("trend down") }
         )
-        val b = repo(svc).load("https://aquadx.net/aqua", "mai2", "Sigma")
+        val b = repo(svc).load("https://aquadx.net/aqua", "Sigma")
         assertNotNull(b.summary)
         assertTrue("scores must survive", b.scores.isNotEmpty())
         assertTrue("best must survive", b.best.isNotEmpty())
@@ -62,32 +62,15 @@ class ProfileRepositoryTest {
     }
 
     @Test
-    fun unsupportedGame_degradesToHeaderOnly() = runBlocking {
-        val svc = FakeProfileService(
-            ratingFn = {
-                UserRatingDto(
-                    best35 = listOf(listOf("1", "2", "3", "4")),
-                    musicList = listOf(MusicScoreDto(musicId = 1, level = 1, achievement = 1000000))
-                )
-            }
-        )
-        val b = repo(svc).load("https://aquadx.net/aqua", "ongeki", "Sigma")
-        assertNotNull(b.summary)
-        assertTrue("no scores for unsupported game", b.scores.isEmpty())
-        assertTrue("no recent for unsupported game", b.recent.isEmpty())
-        assertTrue("no best for unsupported game", b.best.isEmpty())
-    }
-
-    @Test
     fun emptyMeta_fallsBackToMusicId() = runBlocking {
         val svc = FakeProfileService(allMusicFn = { emptyMap() })
-        val b = repo(svc).load("https://aquadx.net/aqua", "mai2", "Sigma")
+        val b = repo(svc).load("https://aquadx.net/aqua", "Sigma")
         assertTrue(b.meta.isEmpty())
         assertEquals("22", ScoreFormat.songName(b.meta, 22))
     }
 
     @Test
-    fun supportedGame_mapsScoresToSealed() = runBlocking {
+    fun mapsScoresSortedByAchievement() = runBlocking {
         val svc = FakeProfileService(
             ratingFn = {
                 UserRatingDto(
@@ -99,7 +82,7 @@ class ProfileRepositoryTest {
             },
             allMusicFn = { mapOf("10" to MusicMeta(name = "Song A")) }
         )
-        val b = repo(svc).load("https://aquadx.net/aqua", "mai2", "Sigma")
+        val b = repo(svc).load("https://aquadx.net/aqua", "Sigma")
         assertEquals(2, b.scores.size)
         // Отсортировано по achievement убыванием -> сначала 1005000 (musicId 11)
         assertEquals(11, b.scores.first().musicId)

@@ -51,31 +51,40 @@ fun SectionHeader(title: String, count: Int? = null) {
 }
 
 @Composable
-fun BestRow(index: Int, entry: BestEntry, game: String, meta: Map<Int, MusicMeta>) {
+fun BestRow(index: Int, entry: BestEntry, meta: Map<Int, MusicMeta>, baseUrl: String) {
     ScoreRowShell(
+        baseUrl = baseUrl,
+        musicId = entry.musicId,
         rankIndex = index + 1,
         title = ScoreFormat.songName(meta, entry.musicId),
         level = entry.level,
-        levelText = ScoreFormat.levelName(game, entry.level),
-        value = ScoreFormat.bestValueLabel(game, entry.value),
+        levelText = ScoreFormat.levelName(entry.level),
+        value = ScoreFormat.bestValueLabel(entry.value),
         badges = emptyList()
     )
 }
 
 @Composable
-fun ScoreRow(score: ProfileScore, meta: Map<Int, MusicMeta>) {
+fun ScoreRow(score: ProfileScore, meta: Map<Int, MusicMeta>, baseUrl: String) {
     ScoreRowShell(
+        baseUrl = baseUrl,
+        musicId = score.musicId,
         rankIndex = null,
         title = ScoreFormat.songName(meta, score.musicId),
         level = score.level,
-        levelText = levelLabel(score),
-        value = valueLabel(score),
-        badges = badges(score)
+        levelText = ScoreFormat.levelName(score.level),
+        value = ScoreFormat.achievementPercent(score.achievement),
+        badges = listOfNotNull(
+            ScoreFormat.comboLabel(score.comboStatus),
+            ScoreFormat.syncLabel(score.syncStatus)
+        )
     )
 }
 
 @Composable
 private fun ScoreRowShell(
+    baseUrl: String,
+    musicId: Int,
     rankIndex: Int?,
     title: String,
     level: Int,
@@ -87,7 +96,7 @@ private fun ScoreRowShell(
         Row(
             Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (rankIndex != null) {
@@ -96,9 +105,11 @@ private fun ScoreRowShell(
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = FontFamily.Monospace,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.width(28.dp)
+                    modifier = Modifier.width(24.dp)
                 )
             }
+            JacketImage(baseUrl, musicId, size = 44.dp)
+            Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     title,
@@ -147,32 +158,6 @@ private fun Badge(text: String) {
     }
 }
 
-// --- per-game разбор через sealed when (без строковых проверок game в UI) ---
-
-private fun levelLabel(score: ProfileScore): String = when (score) {
-    is ProfileScore.Mai -> ScoreFormat.levelName("mai2", score.level)
-    is ProfileScore.Chu -> ScoreFormat.levelName("chu3", score.level)
-}
-
-private fun valueLabel(score: ProfileScore): String = when (score) {
-    is ProfileScore.Mai -> ScoreFormat.achievementPercent(score.achievement)
-    is ProfileScore.Chu -> ScoreFormat.chuScore(score.score)
-}
-
-private fun badges(score: ProfileScore): List<String> = when (score) {
-    is ProfileScore.Mai -> listOfNotNull(
-        ScoreFormat.comboLabel(score.comboStatus),
-        ScoreFormat.syncLabel(score.syncStatus)
-    )
-    is ProfileScore.Chu -> listOfNotNull(
-        when {
-            score.isAllJustice == true -> "AJ"
-            score.isFullCombo == true -> "FC"
-            else -> null
-        }
-    )
-}
-
 private fun difficultyColor(level: Int): Color = when (level) {
     0 -> Color(0xFF22C55E)
     1 -> Color(0xFFF59E0B)
@@ -187,14 +172,17 @@ private fun difficultyColor(level: Int): Color = when (level) {
 private fun ScoreRowPreview() {
     AquaCardTheme {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(12.dp)) {
-            BestRow(0, BestEntry(834, 4, 1008790), "mai2", mapOf(834 to MusicMeta(name = "Oshama Scramble!")))
+            val base = "https://aquadx.net/aqua"
+            BestRow(0, BestEntry(834, 4, 1008790), mapOf(834 to MusicMeta(name = "Oshama Scramble!")), base)
             ScoreRow(
-                ProfileScore.Mai(22, 3, achievement = 1005000, deluxscore = 2625, comboStatus = 3, syncStatus = 2, scoreRank = 13),
-                mapOf(22 to MusicMeta(name = "PANDORA PARADOXXX"))
+                ProfileScore(22, 3, achievement = 1005000, deluxscore = 2625, comboStatus = 3, syncStatus = 2, scoreRank = 13),
+                mapOf(22 to MusicMeta(name = "PANDORA PARADOXXX")),
+                base
             )
             ScoreRow(
-                ProfileScore.Chu(2252, 2, score = 1009500, scoreRank = 7, isFullCombo = true, isAllJustice = false),
-                mapOf(2252 to MusicMeta(name = "Trichromatic"))
+                ProfileScore(11, 4, achievement = 1009500, deluxscore = 3000, comboStatus = 4, syncStatus = 3, scoreRank = 15),
+                mapOf(11 to MusicMeta(name = "Pursuing My True Self")),
+                base
             )
         }
     }

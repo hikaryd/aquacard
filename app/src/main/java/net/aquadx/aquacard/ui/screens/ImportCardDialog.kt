@@ -37,7 +37,8 @@ fun ImportCardDialog(
         text = {
             Column {
                 Text(
-                    "Вставьте Serial Number (02:FE:…) или Access Code (20 цифр) вашей карты AquaDX. " +
+                    "Вставьте номер карты: из eamemu (IDm/SID или строка {\"sid\":\"02FE…\"}), " +
+                        "Serial Number (02:FE:…), 12 hex или Access Code (20 цифр). Формат определится сам. " +
                         "Эмуляция доступна только для карт с IDm 02FE.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -57,7 +58,7 @@ fun ImportCardDialog(
                         code = it
                         error = null
                     },
-                    label = { Text("Serial Number или Access Code") },
+                    label = { Text("Номер карты (eamemu / Serial / Access)") },
                     singleLine = true,
                     isError = error != null,
                     modifier = Modifier.fillMaxWidth(),
@@ -70,11 +71,12 @@ fun ImportCardDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                val idm = CardFormat.idmFromSerial(code) ?: CardFormat.idmFromAccessCode(code)
+                val idm = CardFormat.idmFromAny(code)
                 if (idm == null) {
-                    error = "Не похоже на Serial Number или Access Code."
+                    error = "Не распознан номер карты. Нужен IDm, Serial, 20-значный Access Code или строка из eamemu."
                 } else {
-                    onImport(name.ifBlank { "Импортированная карта" }, idm)
+                    val resolvedName = name.ifBlank { CardFormat.nameFromImport(code) ?: "Импортированная карта" }
+                    onImport(resolvedName, idm)
                 }
             }) { Text("Импортировать") }
         },

@@ -6,7 +6,6 @@ import net.aquadx.aquacard.data.GameBrief
 import net.aquadx.aquacard.data.GameSummary
 import net.aquadx.aquacard.data.MusicMeta
 import net.aquadx.aquacard.data.MusicScoreDto
-import net.aquadx.aquacard.data.RecentPlayDto
 import net.aquadx.aquacard.data.TrendPoint
 import net.aquadx.aquacard.data.UserRatingDto
 import org.junit.Assert.assertEquals
@@ -32,6 +31,7 @@ class ProfileParseTest {
         assertEquals(16666, s.rating)
         assertEquals(2795, s.plays)
         assertEquals("Sigma", s.aquaUser?.username)
+        assertEquals("8781.png", s.aquaUser?.profilePicture)
         assertEquals(2, s.ranks.size)
         assertEquals("SSS+", s.ranks[0].name)
         assertEquals(987, s.ranks[0].count)
@@ -51,34 +51,6 @@ class ProfileParseTest {
         assertEquals(1, r.musicList.size)
         assertEquals(1005590, r.musicList[0].achievement)
         assertEquals(2625, r.musicList[0].deluxscoreMax)
-    }
-
-    @Test
-    fun ratingChu_parsesBest30Recent10AndMusicList() {
-        val fx = """
-            {"best30":[["2422","2","993344"],["2252","2","806267"]],"recent10":[["2422","3","924078"]],
-            "musicList":[{"musicId":2252,"level":2,"playCount":1,"scoreMax":806267,"missCount":292,
-            "maxComboCount":265,"scoreRank":4,"isFullCombo":false,"isAllJustice":false,"isLock":false}]}
-        """.trimIndent()
-        val r = json.decodeFromString<UserRatingDto>(fx)
-        assertEquals(2, r.best30.size)
-        assertEquals(1, r.recent10.size)
-        assertEquals(806267, r.musicList[0].scoreMax)
-        assertEquals(false, r.musicList[0].isFullCombo)
-    }
-
-    @Test
-    fun recentChu_parses() {
-        val fx = """
-            [{"romVersion":"2.31.00","orderId":0,"playDate":"2025-11-24T00:00:00",
-            "userPlayDate":"2025-11-25T02:42:14","musicId":2252,"level":2,"score":806267,"rank":4,
-            "maxCombo":265,"judgeGuilty":292,"track":1}]
-        """.trimIndent()
-        val list = json.decodeFromString<List<RecentPlayDto>>(fx)
-        assertEquals(1, list.size)
-        assertEquals(2252, list[0].musicId)
-        assertEquals(806267, list[0].score)
-        assertEquals(4, list[0].rank)
     }
 
     @Test
