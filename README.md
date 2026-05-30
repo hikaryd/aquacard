@@ -58,6 +58,16 @@
 ./gradlew :app:testDebugUnitTest      # запустить JVM юнит-тесты
 ```
 
+### Makefile (удобные обёртки)
+
+```bash
+make doctor    # проверить окружение (JDK17 + Android SDK)
+make build     # собрать debug APK
+make test      # юнит-тесты
+make verify    # тесты + сборка APK (как в CI)
+make help      # список всех целей
+```
+
 APK появится в `app/build/outputs/apk/debug/app-debug.apk`.
 Юнит-тесты (`CryptoTest.kt`, `CardFormatTest.kt` и др.) проверяют криптографию на соответствие эталонным тест-векторам.
 
