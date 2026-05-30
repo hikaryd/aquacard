@@ -68,24 +68,59 @@ data class MusicScoreDto(
     val isAllJustice: Boolean? = null // chu3
 )
 
-/** Запись недавней партии (playlog). Union обеих игр. */
+/**
+ * Запись недавней партии maimai (playlog). Имена полей сверены с живым ответом
+ * GET /api/v2/game/mai2/recent (см. docs). Толерантна: все поля nullable/default.
+ * Агрегатных джаджментов в ответе НЕТ — суммируются из 25 per-note полей (см. AquaProfileRepository).
+ */
 @Serializable
 data class RecentPlayDto(
     val musicId: Int = 0,
     val level: Int? = null,
-    val userPlayDate: String? = null,
+    val trackNo: Int? = null,
+    val userPlayDate: String? = null, // "yyyy-MM-dd HH:mm:ss" (+".0" у новейших) — ключ сортировки
     val playDate: String? = null,
-    val achievement: Int? = null, // mai2
-    val score: Int? = null,       // chu3
-    val scoreRank: Int? = null,
-    val rank: Int? = null,
+    val achievement: Int? = null,     // ×10000 (919811 = 91.9811%)
+    val deluxscore: Int? = null,
+    val scoreRank: Int? = null,       // числовой код
     val comboStatus: Int? = null,
     val syncStatus: Int? = null,
-    val deluxscore: Int? = null,
+    val maxCombo: Int? = null,
+    val totalCombo: Int? = null,      // знаменатель FC; deluxscore max = totalCombo*3
+    val fastCount: Int? = null,
+    val lateCount: Int? = null,
     val isClear: Boolean? = null,
+    val isFullCombo: Boolean? = null,
+    val isAllPerfect: Boolean? = null,
     val beforeRating: Int? = null,
     val afterRating: Int? = null,
-    val placeName: String? = null
+    val placeName: String? = null,
+    // джаджменты по типам нот
+    val tapCriticalPerfect: Int? = null,
+    val tapPerfect: Int? = null,
+    val tapGreat: Int? = null,
+    val tapGood: Int? = null,
+    val tapMiss: Int? = null,
+    val holdCriticalPerfect: Int? = null,
+    val holdPerfect: Int? = null,
+    val holdGreat: Int? = null,
+    val holdGood: Int? = null,
+    val holdMiss: Int? = null,
+    val slideCriticalPerfect: Int? = null,
+    val slidePerfect: Int? = null,
+    val slideGreat: Int? = null,
+    val slideGood: Int? = null,
+    val slideMiss: Int? = null,
+    val touchCriticalPerfect: Int? = null,
+    val touchPerfect: Int? = null,
+    val touchGreat: Int? = null,
+    val touchGood: Int? = null,
+    val touchMiss: Int? = null,
+    val breakCriticalPerfect: Int? = null,
+    val breakPerfect: Int? = null,
+    val breakGreat: Int? = null,
+    val breakGood: Int? = null,
+    val breakMiss: Int? = null
 )
 
 @Serializable

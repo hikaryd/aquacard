@@ -88,4 +88,33 @@ class ProfileRepositoryTest {
         assertEquals(11, b.scores.first().musicId)
         assertEquals("Song A", ScoreFormat.songName(b.meta, 10))
     }
+
+    @Test
+    fun recent_sortedNewestFirst_andJudgesAggregated() = runBlocking {
+        val svc = FakeProfileService(
+            recentFn = {
+                listOf(
+                    // старая партия — в ответе идёт ПЕРВОЙ (эндпоинт по возрастанию)
+                    RecentPlayDto(musicId = 1, level = 3, userPlayDate = "2026-05-01 10:00:00", achievement = 980000),
+                    // новейшая — с хвостовым ".0" в дате
+                    RecentPlayDto(
+                        musicId = 2, level = 3, userPlayDate = "2026-05-30 20:27:47.0", achievement = 984070,
+                        maxCombo = 302, totalCombo = 302, fastCount = 47, lateCount = 39,
+                        tapCriticalPerfect = 508, holdCriticalPerfect = 84, slideCriticalPerfect = 96,
+                        touchCriticalPerfect = 79, breakCriticalPerfect = 177,
+                        tapMiss = 5, breakMiss = 5
+                    )
+                )
+            }
+        )
+        val b = repo(svc).load("https://aquadx.net/aqua", "Sigma")
+        assertEquals(2, b.recent.size)
+        val top = b.recent.first()
+        assertEquals(2, top.musicId) // новейшая первой, несмотря на порядок в ответе и ".0"
+        assertEquals(508 + 84 + 96 + 79 + 177, top.judges?.crit)
+        assertEquals(10, top.judges?.miss)
+        assertEquals(513, top.notes?.tap) // 508 CRIT + 5 MISS = 513 нот tap
+        assertEquals(47, top.fastCount)
+        assertEquals(302, top.totalCombo) // deluxe max = totalCombo*3 считается в UI-маппере toScoreDetail()
+    }
 }

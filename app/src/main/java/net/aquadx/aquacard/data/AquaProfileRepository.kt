@@ -74,23 +74,57 @@ class AquaProfileRepository(
             )
         }.sortedByDescending { it.achievement ?: 0 }
 
+    // /recent отдаёт партии по возрастанию (старые первыми) — сортируем по дате УБЫВАНИЕМ,
+    // чтобы «последние» были действительно последними. Дата нормализуется (срез хвостового ".0").
     private fun mapRecent(list: List<RecentPlayDto>): List<RecentEntry> =
-        list.map { dto ->
-            RecentEntry(
-                musicId = dto.musicId,
-                level = dto.level ?: 0,
-                playDate = dto.userPlayDate ?: dto.playDate,
-                achievement = dto.achievement,
-                rank = dto.scoreRank ?: dto.rank,
-                comboStatus = dto.comboStatus,
-                isClear = dto.isClear,
-                syncStatus = dto.syncStatus,
-                deluxscore = dto.deluxscore,
-                beforeRating = dto.beforeRating,
-                afterRating = dto.afterRating,
-                placeName = dto.placeName
-            )
-        }
+        list.sortedByDescending { (it.userPlayDate ?: it.playDate ?: "").substringBefore('.') }
+            .map { dto ->
+                RecentEntry(
+                    musicId = dto.musicId,
+                    level = dto.level ?: 0,
+                    playDate = dto.userPlayDate ?: dto.playDate,
+                    achievement = dto.achievement,
+                    rank = dto.scoreRank,
+                    comboStatus = dto.comboStatus,
+                    isClear = dto.isClear,
+                    syncStatus = dto.syncStatus,
+                    deluxscore = dto.deluxscore,
+                    beforeRating = dto.beforeRating,
+                    afterRating = dto.afterRating,
+                    placeName = dto.placeName,
+                    maxCombo = dto.maxCombo,
+                    totalCombo = dto.totalCombo,
+                    fastCount = dto.fastCount,
+                    lateCount = dto.lateCount,
+                    isFullCombo = dto.isFullCombo,
+                    isAllPerfect = dto.isAllPerfect,
+                    trackNo = dto.trackNo,
+                    judges = judgeBreakdown(dto),
+                    notes = noteBreakdown(dto)
+                )
+            }
+
+    private fun judgeBreakdown(d: RecentPlayDto): JudgeBreakdown? {
+        val crit = sum(d.tapCriticalPerfect, d.holdCriticalPerfect, d.slideCriticalPerfect, d.touchCriticalPerfect, d.breakCriticalPerfect)
+        val perfect = sum(d.tapPerfect, d.holdPerfect, d.slidePerfect, d.touchPerfect, d.breakPerfect)
+        val great = sum(d.tapGreat, d.holdGreat, d.slideGreat, d.touchGreat, d.breakGreat)
+        val good = sum(d.tapGood, d.holdGood, d.slideGood, d.touchGood, d.breakGood)
+        val miss = sum(d.tapMiss, d.holdMiss, d.slideMiss, d.touchMiss, d.breakMiss)
+        return if (crit + perfect + great + good + miss == 0) null
+        else JudgeBreakdown(crit, perfect, great, good, miss)
+    }
+
+    private fun noteBreakdown(d: RecentPlayDto): NoteBreakdown? {
+        val tap = sum(d.tapCriticalPerfect, d.tapPerfect, d.tapGreat, d.tapGood, d.tapMiss)
+        val hold = sum(d.holdCriticalPerfect, d.holdPerfect, d.holdGreat, d.holdGood, d.holdMiss)
+        val slide = sum(d.slideCriticalPerfect, d.slidePerfect, d.slideGreat, d.slideGood, d.slideMiss)
+        val touch = sum(d.touchCriticalPerfect, d.touchPerfect, d.touchGreat, d.touchGood, d.touchMiss)
+        val brk = sum(d.breakCriticalPerfect, d.breakPerfect, d.breakGreat, d.breakGood, d.breakMiss)
+        return if (tap + hold + slide + touch + brk == 0) null
+        else NoteBreakdown(tap, hold, slide, touch, brk)
+    }
+
+    private fun sum(vararg v: Int?): Int = v.sumOf { it ?: 0 }
 
     companion object {
         private const val GAME = "mai2"

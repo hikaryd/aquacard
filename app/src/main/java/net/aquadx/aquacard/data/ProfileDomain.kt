@@ -19,6 +19,26 @@ data class ProfileScore(
     val scoreRank: Int?
 )
 
+/** Разбивка джаджментов (агрегат по типам нот). */
+@Serializable
+data class JudgeBreakdown(
+    val crit: Int = 0,
+    val perfect: Int = 0,
+    val great: Int = 0,
+    val good: Int = 0,
+    val miss: Int = 0
+)
+
+/** Кол-во нот по типам. */
+@Serializable
+data class NoteBreakdown(
+    val tap: Int = 0,
+    val hold: Int = 0,
+    val slide: Int = 0,
+    val touch: Int = 0,
+    val brk: Int = 0
+)
+
 /** Недавняя партия maimai (полная запись для детального экрана). */
 @Serializable
 data class RecentEntry(
@@ -33,7 +53,16 @@ data class RecentEntry(
     val deluxscore: Int? = null,
     val beforeRating: Int? = null,
     val afterRating: Int? = null,
-    val placeName: String? = null
+    val placeName: String? = null,
+    val maxCombo: Int? = null,
+    val totalCombo: Int? = null,
+    val fastCount: Int? = null,
+    val lateCount: Int? = null,
+    val isFullCombo: Boolean? = null,
+    val isAllPerfect: Boolean? = null,
+    val trackNo: Int? = null,
+    val judges: JudgeBreakdown? = null,
+    val notes: NoteBreakdown? = null
 )
 
 /** Запись из секции Best: значение = achievement. */
