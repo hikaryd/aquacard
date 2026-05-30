@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AquaCard</string>
+    <string name="nfc_service_description">Amusement IC / Aime card emulator for AquaDX</string>
+    <string name="cards_title">Your cards</string>
+    <string name="add_card">Add card</string>
+    <string name="edit_card">Edit card</string>
+    <string name="card_name_label">Card Name</string>
+    <string name="idm_label">IDm (remaining 12 hex)</string>
+    <string name="idm_hint">02FE...</string>
+    <string name="note_label">Note (optional)</string>
+    <string name="color_label">Card Color</string>
+    <string name="linked_user_label">AquaDX Username (optional)</string>
+    <string name="generate_random">Generate Random</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="copy">Copy</string>
+    <string name="copied">Copied to clipboard</string>
+    <string name="access_code_btn">Access Code (20 digits)</string>
+    <string name="idm_btn">Copy IDm</string>
+    <string name="emulate">Emulate NFC</string>
+    <string name="hce_not_supported_title">HCE-F Not Supported</string>
+    <string name="hce_not_supported_msg">Unfortunately, your device does not support NFC card emulation of FeliCa type (HCE-F). You can still manage cards, copy their Access Codes, and link them to your AquaDX profile.</string>
+    <string name="nfc_disabled_title">NFC is Disabled</string>
+    <string name="nfc_disabled_msg">Please enable NFC in your device system settings to use the card emulator.</string>
+    <string name="open_settings">Open Settings</string>
+    <string name="emulation_active_title">Emulation is Active</string>
+    <string name="emulation_active_msg">Hold the back of your phone near the arcade reader. Keep it still for 1–2 seconds.</string>
+    <string name="stop_emulation">Stop</string>
+    <string name="profile_title">AquaDX Profile</string>
+    <string name="fetch_profile">Fetch Profile</string>
+    <string name="profile_not_linked">Profile not linked</string>
+    <string name="settings_title">Settings</string>
+    <string name="base_url_label">Base URL AquaDX</string>
+    <string name="default_url">Reset to Default</string>
+    <string name="import_export">Import / Export Cards</string>
+    <string name="import_btn">Import JSON</string>
+    <string name="export_btn">Export JSON</string>
+    <string name="all_cards">All Cards</string>
+    <string name="plays_count">Plays: %1$d</string>
+    <string name="rating_text">Rating: %1$d</string>
+    <string name="server_rank_text">Server Rank: #%1$d</string>
+    <string name="instructions_title">Linking Instructions</string>
+    <string name="instructions_detail">1. Generate a card in the app. \n2. Copy the 20-digit Access Code. \n3. Log in to your AquaNet website dashboard. \n4. Bind the card in the \"card link\" section. \n5. Once bound, tapping your phone on the arcade reader will load your server profile!</string>
+    <string name="link_card_web">Bind Card on Website</string>
+</resources>

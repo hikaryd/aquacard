@@ -1,0 +1,43 @@
+# ──────────────── Gradle / Android build ────────────────
+.gradle/
+build/
+/captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+local.properties
+
+# ──────────────── Android Studio / IntelliJ ────────────────
+*.iml
+.idea/
+!.idea/runConfigurations/
+.navigation/
+capture.png
+
+# ──────────────── Kotlin ────────────────
+.kotlin/
+
+# ──────────────── macOS ────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ──────────────── Logs / temp ────────────────
+*.log
+*.tmp
+
+# ──────────────── Secrets / env ────────────────
+.env
+.env.*
+*.keystore
+*.jks
+keystore.properties
+
+# ──────────────── AI / agent tooling (local only) ────────────────
+.omc/
+.claude/settings.local.json

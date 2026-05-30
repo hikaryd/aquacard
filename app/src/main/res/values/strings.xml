@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AquaCard</string>
+    <string name="nfc_service_description">Эмулятор карт Amusement IC / Aime для AquaDX</string>
+    <string name="cards_title">Ваши карты</string>
+    <string name="add_card">Добавить карту</string>
+    <string name="edit_card">Редактировать карту</string>
+    <string name="card_name_label">Название карты</string>
+    <string name="idm_label">IDm (Свободные 12 hex)</string>
+    <string name="idm_hint">02FE...</string>
+    <string name="note_label">Заметка (опционально)</string>
+    <string name="color_label">Цвет карты</string>
+    <string name="linked_user_label">Никнейм в AquaDX (опционально)</string>
+    <string name="generate_random">Сгенерировать случайный</string>
+    <string name="save">Сохранить</string>
+    <string name="cancel">Отмена</string>
+    <string name="delete">Удалить</string>
+    <string name="copy">Скопировать</string>
+    <string name="copied">Скопировано в буфер обмена</string>
+    <string name="access_code_btn">Access Code (20 цифр)</string>
+    <string name="idm_btn">Скопировать IDm</string>
+    <string name="emulate">Эмулировать NFC</string>
+    <string name="hce_not_supported_title">HCE-F не поддерживается</string>
+    <string name="hce_not_supported_msg">К сожалению, ваше устройство не поддерживает NFC-эмуляцию карт типа FeliCa (HCE-F). Вы всё ещё можете управлять картами, копировать Access Code и привязывать их к профилю AquaDX.</string>
+    <string name="nfc_disabled_title">NFC выключен</string>
+    <string name="nfc_disabled_msg">Пожалуйста, включите NFC в настройках вашего устройства для работы эмулятора.</string>
+    <string name="open_settings">Открыть настройки</string>
+    <string name="emulation_active_title">Эмуляция активна</string>
+    <string name="emulation_active_msg">Приложите заднюю панель телефона к аркадному ридеру. Держите неподвижно 1–2 секунды.</string>
+    <string name="stop_emulation">Остановить</string>
+    <string name="profile_title">Профиль AquaDX</string>
+    <string name="fetch_profile">Получить профиль</string>
+    <string name="profile_not_linked">Профиль не привязан</string>
+    <string name="settings_title">Настройки</string>
+    <string name="base_url_label">Базовый URL AquaDX</string>
+    <string name="default_url">Использовать по умолчанию</string>
+    <string name="import_export">Импорт / Экспорт карт</string>
+    <string name="import_btn">Импорт JSON</string>
+    <string name="export_btn">Экспорт JSON</string>
+    <string name="all_cards">Все карты</string>
+    <string name="plays_count">Игры: %1$d</string>
+    <string name="rating_text">Рейтинг: %1$d</string>
+    <string name="server_rank_text">Ранг на сервере: #%1$d</string>
+    <string name="instructions_title">Инструкция по привязке</string>
+    <string name="instructions_detail">1. Сгенерируйте карту в приложении. \n2. Скопируйте 20-значный Access Code. \n3. Зайдите в личный кабинет на сайте AquaNet. \n4. Добавьте карту в разделе связывания (card link). \n5. После этого приложенный телефон распознает ваш профиль на сервере AquaDX!</string>
+    <string name="link_card_web">Привязать карту на сайте</string>
+</resources>

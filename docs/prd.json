@@ -1,0 +1,75 @@
+{
+  "task": "Полноценный экран профиля AquaDX: вынести AquaProfileService и переделать вкладку «Статистика» в полный профиль (шапка + Best + все скоры с названиями песен + недавние + график). План: docs/profile-ui-plan.md",
+  "projectDir": "/Users/user/aquacard/aquacard_src/android",
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "Data-фундамент: tolerant wire-DTO + sealed-ядро + AquaProfileService + фабрика",
+      "priority": 1,
+      "passes": true,
+      "acceptanceCriteria": [
+        "AquaProfileModels.kt: GameSummary, RankCount, UserDetailDto, UserRatingDto, MusicScoreDto, RecentPlayDto, TrendPoint, GameBrief, MusicMeta, NoteLv — все поля кроме musicId имеют дефолт (= null/emptyList)",
+        "ProfileDomain.kt: sealed ProfileScore(Mai|Chu), sealed RecentEntry(Mai|Chu), BestEntry, ProfileBundle",
+        "AquaProfileService.kt: summary/detail/rating/recent/trend/userGames + allMusic(@Url url) — абсолютный URL",
+        "AquaApi.createProfileService(baseUrl) переиспользует тот же json, logging BASIC, не создаёт второй Json",
+        "assembleDebug компилирует data-слой без ошибок"
+      ]
+    },
+    {
+      "id": "US-002",
+      "title": "ScoreFormat (null-safe хелперы, size-gated кортежи) + ScoreFormatTest",
+      "priority": 2,
+      "passes": true,
+      "acceptanceCriteria": [
+        "ScoreFormat: achievementPercent, levelName(game), maiRank, comboLabel, syncLabel, formatRating(game), chuScore, songName, bestValueLabel, parseBestTuple(game) с getOrNull (Locale.US для чисел)",
+        "ScoreFormatTest.achievement_1008790_to_percent -> '100.8790%'",
+        "ScoreFormatTest.levelIndex_3_is_MASTER",
+        "ScoreFormatTest.bestTuple_mai_parses (4-кортеж) и bestTuple_chu_parses (3-кортеж)",
+        "ScoreFormatTest.bestTuple_shortAndLong_doNotThrow (длина 1 и 6 без исключения)",
+        "testDebugUnitTest: ScoreFormatTest зелёный (9 тестов)"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "AquaProfileRepository (supervisorScope, изоляция, маппинг, staticBase) + тесты парса/репо/хоста",
+      "priority": 3,
+      "passes": true,
+      "acceptanceCriteria": [
+        "Repository.load грузит секции параллельно в supervisorScope, try/catch ВНУТРИ каждого async, ошибки в errors",
+        "ProfileParseTest: mai2 summary/rating(best+musicList), chu3 rating(best30/recent10+musicList), recent, trend, userGames, allMusic парсятся без исключений; unknownFields_doNotThrow (8 тестов)",
+        "ProfileRepositoryTest.oneSectionThrows_othersSurvive (trend бросает -> summary/scores есть, errors содержит trend)",
+        "ProfileRepositoryTest.unsupportedGame_degradesToHeaderOnly (ongeki -> scores/recent/best пусты, summary есть, без краша)",
+        "ProfileRepositoryTest.emptyMeta_fallsBackToMusicId (songName(пустая meta, id) == id.toString())",
+        "HostDerivationTest.staticBase_for_3_shapes (3 формы baseUrl -> верный абсолютный meta-URL)",
+        "testDebugUnitTest: все эти тесты зелёные"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "UI: ProfileScreen + компоненты (один LazyColumn, sealed when, @Preview) + замена ProfileTab",
+      "priority": 4,
+      "passes": true,
+      "acceptanceCriteria": [
+        "ui/screens/profile/: ProfileScreen, ProfileHeader, RankDistribution, TrendChart, ScoreList, RecentSection — у каждого @Preview",
+        "Весь экран — один LazyColumn; musicList эмитится через items(); нет вложенного вертикального скролла",
+        "Рендер скоров через исчерпывающий when(ProfileScore); НИ ОДНОГО строкового 'game ==' в ui/screens/profile/ (проверено grep — пусто)",
+        "TrendChart на Canvas с фиксированной height(160.dp)",
+        "MainAppScreen вызывает ProfileScreen(cards, baseUrl); старый ProfileTab удалён (grep — нет ссылок)",
+        "Строки: профиль следует инлайновой строковой конвенции экрана (как CardsTab/EmulationTab/SettingsTab); отдельные ресурс-строки не добавляются во избежание неиспользуемых ресурсов",
+        "assembleDebug успешен"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Финальная верификация",
+      "priority": 5,
+      "passes": true,
+      "acceptanceCriteria": [
+        "cd .../aquacard_src/android && ./gradlew :app:testDebugUnitTest проходит (31 тест: новые 23 + старые 8, 0 падений)",
+        "./gradlew :app:assembleDebug собирает app-debug.apk (18.9 МБ, скопирован в ~/aquacard/AquaCard-debug.apk)",
+        "0 ошибок компиляции: compileDebugKotlin успешен (kotlin-lsp не установлен — gradle-компиляция как авторитетная проверка)",
+        "Старые ApiParseTest/CardFormatTest/CryptoTest остаются зелёными"
+      ]
+    }
+  ]
+}
