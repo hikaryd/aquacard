@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -25,8 +28,12 @@ import net.aquadx.aquacard.data.ScoreFormat
 import net.aquadx.aquacard.ui.theme.AquaCardTheme
 
 @Composable
-fun RecentRow(entry: RecentEntry, meta: Map<Int, MusicMeta>, baseUrl: String) {
-    Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+fun RecentRow(entry: RecentEntry, meta: Map<Int, MusicMeta>, baseUrl: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
         Row(
             Modifier
                 .fillMaxWidth()
@@ -59,6 +66,12 @@ fun RecentRow(entry: RecentEntry, meta: Map<Int, MusicMeta>, baseUrl: String) {
                 fontFamily = FontFamily.Monospace,
                 color = MaterialTheme.colorScheme.primary
             )
+            Spacer(Modifier.width(4.dp))
+            Icon(
+                Icons.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
@@ -76,12 +89,14 @@ private fun RecentRowPreview() {
             RecentRow(
                 RecentEntry(834, 3, "2026-05-29T20:11:00", achievement = 1004210, rank = 13, comboStatus = 1, isClear = true),
                 mapOf(834 to MusicMeta(name = "Oshama Scramble!")),
-                base
+                base,
+                onClick = {}
             )
             RecentRow(
                 RecentEntry(11, 2, "2025-11-25T02:42:14", achievement = 980000, rank = 4, comboStatus = 1, isClear = true),
                 mapOf(11 to MusicMeta(name = "Trichromatic")),
-                base
+                base,
+                onClick = {}
             )
         }
     }

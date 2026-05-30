@@ -14,7 +14,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,10 +50,11 @@ fun SectionHeader(title: String, count: Int? = null) {
 }
 
 @Composable
-fun BestRow(index: Int, entry: BestEntry, meta: Map<Int, MusicMeta>, baseUrl: String) {
+fun BestRow(index: Int, entry: BestEntry, meta: Map<Int, MusicMeta>, baseUrl: String, onClick: () -> Unit) {
     ScoreRowShell(
         baseUrl = baseUrl,
         musicId = entry.musicId,
+        onClick = onClick,
         rankIndex = index + 1,
         title = ScoreFormat.songName(meta, entry.musicId),
         level = entry.level,
@@ -65,10 +65,11 @@ fun BestRow(index: Int, entry: BestEntry, meta: Map<Int, MusicMeta>, baseUrl: St
 }
 
 @Composable
-fun ScoreRow(score: ProfileScore, meta: Map<Int, MusicMeta>, baseUrl: String) {
+fun ScoreRow(score: ProfileScore, meta: Map<Int, MusicMeta>, baseUrl: String, onClick: () -> Unit) {
     ScoreRowShell(
         baseUrl = baseUrl,
         musicId = score.musicId,
+        onClick = onClick,
         rankIndex = null,
         title = ScoreFormat.songName(meta, score.musicId),
         level = score.level,
@@ -85,6 +86,7 @@ fun ScoreRow(score: ProfileScore, meta: Map<Int, MusicMeta>, baseUrl: String) {
 private fun ScoreRowShell(
     baseUrl: String,
     musicId: Int,
+    onClick: () -> Unit,
     rankIndex: Int?,
     title: String,
     level: Int,
@@ -92,7 +94,11 @@ private fun ScoreRowShell(
     value: String,
     badges: List<String>
 ) {
-    Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
         Row(
             Modifier
                 .fillMaxWidth()
@@ -143,7 +149,7 @@ private fun ScoreRowShell(
 }
 
 @Composable
-private fun Badge(text: String) {
+internal fun Badge(text: String) {
     Surface(
         shape = RoundedCornerShape(4.dp),
         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.18f)
@@ -158,31 +164,24 @@ private fun Badge(text: String) {
     }
 }
 
-private fun difficultyColor(level: Int): Color = when (level) {
-    0 -> Color(0xFF22C55E)
-    1 -> Color(0xFFF59E0B)
-    2 -> Color(0xFFEF4444)
-    3 -> Color(0xFFA855F7)
-    4 -> Color(0xFFE879F9)
-    else -> Color(0xFF9BA1A8)
-}
-
 @Preview
 @Composable
 private fun ScoreRowPreview() {
     AquaCardTheme {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(12.dp)) {
             val base = "https://aquadx.net/aqua"
-            BestRow(0, BestEntry(834, 4, 1008790), mapOf(834 to MusicMeta(name = "Oshama Scramble!")), base)
+            BestRow(0, BestEntry(834, 4, 1008790), mapOf(834 to MusicMeta(name = "Oshama Scramble!")), base, onClick = {})
             ScoreRow(
                 ProfileScore(22, 3, achievement = 1005000, deluxscore = 2625, comboStatus = 3, syncStatus = 2, scoreRank = 13),
                 mapOf(22 to MusicMeta(name = "PANDORA PARADOXXX")),
-                base
+                base,
+                onClick = {}
             )
             ScoreRow(
                 ProfileScore(11, 4, achievement = 1009500, deluxscore = 3000, comboStatus = 4, syncStatus = 3, scoreRank = 15),
                 mapOf(11 to MusicMeta(name = "Pursuing My True Self")),
-                base
+                base,
+                onClick = {}
             )
         }
     }

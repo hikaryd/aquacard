@@ -100,3 +100,13 @@ private fun initialsOf(name: String): String {
         else -> (parts[0].take(1) + parts[1].take(1)).uppercase()
     }
 }
+
+/** Цвет сложности maimai по индексу уровня (BASIC..Re:MASTER). */
+internal fun difficultyColor(level: Int): Color = when (level) {
+    0 -> Color(0xFF22C55E)
+    1 -> Color(0xFFF59E0B)
+    2 -> Color(0xFFEF4444)
+    3 -> Color(0xFFA855F7)
+    4 -> Color(0xFFE879F9)
+    else -> Color(0xFF9BA1A8)
+}

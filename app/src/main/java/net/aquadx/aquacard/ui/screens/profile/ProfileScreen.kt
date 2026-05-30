@@ -72,6 +72,7 @@ fun ProfileScreen(cards: List<Card>, baseUrl: String) {
     var bundle by remember { mutableStateOf<ProfileBundle?>(null) }
     var isRefreshing by remember { mutableStateOf(false) }
     var fatalError by remember { mutableStateOf<String?>(null) }
+    var selectedDetail by remember { mutableStateOf<ScoreDetail?>(null) }
 
     // Сетевое обновление с guard'ом: применяем результат только если ник в поле не сменился.
     fun refresh(name: String) {
@@ -191,30 +192,42 @@ fun ProfileScreen(cards: List<Card>, baseUrl: String) {
                     item { Banner("Часть данных недоступна: ${b.errors.joinToString(", ")}", isError = false) }
                 }
                 b.summary?.let { s -> item { ProfileHeader(s, b.detail, baseUrl) } }
-                if (b.summary?.ranks?.isNotEmpty() == true) {
-                    item { RankDistribution(b.summary!!.ranks) }
+                if (b.recent.isNotEmpty()) {
+                    val recent5 = b.recent.take(5)
+                    item { SectionHeader("Последние партии", recent5.size) }
+                    itemsIndexed(recent5, key = { i, r -> "rc-$i-${r.musicId}" }) { _, r ->
+                        RecentRow(r, b.meta, baseUrl, onClick = { selectedDetail = r.toScoreDetail() })
+                    }
+                }
+                if (b.best.isNotEmpty()) {
+                    item { SectionHeader("Best 35", b.best.size) }
+                    itemsIndexed(b.best, key = { _, e -> "b1-${e.musicId}-${e.level}" }) { i, e -> BestRow(i, e, b.meta, baseUrl, onClick = { selectedDetail = e.toScoreDetail() }) }
+                }
+                if (b.bestSecondary.isNotEmpty()) {
+                    item { SectionHeader("Best 15 (новые)", b.bestSecondary.size) }
+                    itemsIndexed(b.bestSecondary, key = { _, e -> "b2-${e.musicId}-${e.level}" }) { i, e -> BestRow(i, e, b.meta, baseUrl, onClick = { selectedDetail = e.toScoreDetail() }) }
                 }
                 if (b.trend.isNotEmpty()) {
                     item { TrendChart(b.trend) }
                 }
-                if (b.best.isNotEmpty()) {
-                    item { SectionHeader("Best 35", b.best.size) }
-                    itemsIndexed(b.best, key = { _, e -> "b1-${e.musicId}-${e.level}" }) { i, e -> BestRow(i, e, b.meta, baseUrl) }
-                }
-                if (b.bestSecondary.isNotEmpty()) {
-                    item { SectionHeader("Best 15 (новые)", b.bestSecondary.size) }
-                    itemsIndexed(b.bestSecondary, key = { _, e -> "b2-${e.musicId}-${e.level}" }) { i, e -> BestRow(i, e, b.meta, baseUrl) }
-                }
-                if (b.recent.isNotEmpty()) {
-                    item { SectionHeader("Недавние партии", b.recent.size) }
-                    itemsIndexed(b.recent, key = { i, r -> "rc-$i-${r.musicId}" }) { _, r -> RecentRow(r, b.meta, baseUrl) }
+                if (b.summary?.ranks?.isNotEmpty() == true) {
+                    item { RankDistribution(b.summary!!.ranks) }
                 }
                 if (b.scores.isNotEmpty()) {
                     item { SectionHeader("Все скоры", b.scores.size) }
-                    items(b.scores, key = { "sc-${it.musicId}-${it.level}" }) { sc -> ScoreRow(sc, b.meta, baseUrl) }
+                    items(b.scores, key = { "sc-${it.musicId}-${it.level}" }) { sc -> ScoreRow(sc, b.meta, baseUrl, onClick = { selectedDetail = sc.toScoreDetail() }) }
                 }
             }
         }
+    }
+
+    selectedDetail?.let { d ->
+        MusicDetailDialog(
+            detail = d,
+            meta = bundle?.meta ?: emptyMap(),
+            baseUrl = baseUrl,
+            onDismiss = { selectedDetail = null }
+        )
     }
 }
 

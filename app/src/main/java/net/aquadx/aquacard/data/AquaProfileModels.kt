@@ -80,6 +80,8 @@ data class RecentPlayDto(
     val scoreRank: Int? = null,
     val rank: Int? = null,
     val comboStatus: Int? = null,
+    val syncStatus: Int? = null,
+    val deluxscore: Int? = null,
     val isClear: Boolean? = null,
     val beforeRating: Int? = null,
     val afterRating: Int? = null,

@@ -83,7 +83,12 @@ class AquaProfileRepository(
                 achievement = dto.achievement,
                 rank = dto.scoreRank ?: dto.rank,
                 comboStatus = dto.comboStatus,
-                isClear = dto.isClear
+                isClear = dto.isClear,
+                syncStatus = dto.syncStatus,
+                deluxscore = dto.deluxscore,
+                beforeRating = dto.beforeRating,
+                afterRating = dto.afterRating,
+                placeName = dto.placeName
             )
         }
 

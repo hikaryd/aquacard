@@ -19,7 +19,7 @@ data class ProfileScore(
     val scoreRank: Int?
 )
 
-/** Недавняя партия maimai. */
+/** Недавняя партия maimai (полная запись для детального экрана). */
 @Serializable
 data class RecentEntry(
     val musicId: Int,
@@ -28,7 +28,12 @@ data class RecentEntry(
     val achievement: Int?,
     val rank: Int?,
     val comboStatus: Int?,
-    val isClear: Boolean?
+    val isClear: Boolean?,
+    val syncStatus: Int? = null,
+    val deluxscore: Int? = null,
+    val beforeRating: Int? = null,
+    val afterRating: Int? = null,
+    val placeName: String? = null
 )
 
 /** Запись из секции Best: значение = achievement. */
