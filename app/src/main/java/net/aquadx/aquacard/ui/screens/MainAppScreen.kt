@@ -175,14 +175,7 @@ fun MainAppScreen(
                         settingStore.resetToDefault()
                         baseUrl = settingStore.getBaseUrl()
                     },
-                    cards = cards,
-                    onImportCards = { importedList ->
-                        coroutineScope.launch {
-                            importedList.forEach { card ->
-                                db.cardDao().insertCard(card)
-                            }
-                        }
-                    }
+                    cards = cards
                 )
             }
 
@@ -659,13 +652,11 @@ fun SettingsTab(
     baseUrl: String,
     onBaseUrlChange: (String) -> Unit,
     onResetBaseUrl: () -> Unit,
-    cards: List<Card>,
-    onImportCards: (List<Card>) -> Unit
+    cards: List<Card>
 ) {
     var urlText by remember(baseUrl) { mutableStateOf(baseUrl) }
     val clipboard = LocalClipboardManager.current
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
 
     LazyColumn(
         modifier = Modifier
@@ -860,7 +851,7 @@ fun AddEditCardDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    colorPresets.forEach { (hex, tintName) ->
+                    colorPresets.forEach { (hex, _) ->
                         val presetColor = Color(android.graphics.Color.parseColor(hex))
                         Box(
                             modifier = Modifier

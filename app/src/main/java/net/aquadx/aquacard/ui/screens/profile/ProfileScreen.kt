@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -192,6 +191,12 @@ fun ProfileScreen(cards: List<Card>, baseUrl: String) {
                     item { Banner("Часть данных недоступна: ${b.errors.joinToString(", ")}", isError = false) }
                 }
                 b.summary?.let { s -> item { ProfileHeader(s, b.detail, baseUrl) } }
+                if (b.trend.isNotEmpty()) {
+                    item { TrendChart(b.trend) }
+                }
+                if (b.summary?.ranks?.isNotEmpty() == true) {
+                    item { RankDistribution(b.summary.ranks) }
+                }
                 if (b.recent.isNotEmpty()) {
                     val recent5 = b.recent.take(5)
                     item { SectionHeader("Последние партии", recent5.size) }
@@ -206,16 +211,6 @@ fun ProfileScreen(cards: List<Card>, baseUrl: String) {
                 if (b.bestSecondary.isNotEmpty()) {
                     item { SectionHeader("Best 15 (новые)", b.bestSecondary.size) }
                     itemsIndexed(b.bestSecondary, key = { _, e -> "b2-${e.musicId}-${e.level}" }) { i, e -> BestRow(i, e, b.meta, baseUrl, onClick = { selectedDetail = e.toScoreDetail() }) }
-                }
-                if (b.trend.isNotEmpty()) {
-                    item { TrendChart(b.trend) }
-                }
-                if (b.summary?.ranks?.isNotEmpty() == true) {
-                    item { RankDistribution(b.summary!!.ranks) }
-                }
-                if (b.scores.isNotEmpty()) {
-                    item { SectionHeader("Все скоры", b.scores.size) }
-                    items(b.scores, key = { "sc-${it.musicId}-${it.level}" }) { sc -> ScoreRow(sc, b.meta, baseUrl, onClick = { selectedDetail = sc.toScoreDetail() }) }
                 }
             }
         }
