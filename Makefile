@@ -62,6 +62,34 @@ release:
 clean:
 	$(GRADLE) clean $(GRADLE_ARGS)
 
+# ──────────────── iOS (требуется macOS + Xcode) ────────────────
+IOS_PROJECT := iosApp/AquaCard.xcodeproj
+IOS_SCHEME  := AquaCard
+IOS_SIM     ?= platform=iOS Simulator,name=iPhone 17
+
+## ios-build: собрать iOS-приложение под симулятор
+.PHONY: ios-build
+ios-build:
+	xcodebuild -project $(IOS_PROJECT) -scheme $(IOS_SCHEME) \
+		-destination '$(IOS_SIM)' build CODE_SIGNING_ALLOWED=NO
+
+## ios-test: прогнать XCTest юнит-тесты под симулятор
+.PHONY: ios-test
+ios-test:
+	xcodebuild test -project $(IOS_PROJECT) -scheme $(IOS_SCHEME) \
+		-destination '$(IOS_SIM)' CODE_SIGNING_ALLOWED=NO
+
+## ipa: собрать неподписанную .ipa для SideStore -> dist/AquaCard.ipa
+.PHONY: ipa
+ipa:
+	xcodebuild -project $(IOS_PROJECT) -scheme $(IOS_SCHEME) \
+		-configuration Release -sdk iphoneos -derivedDataPath build/ios \
+		CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+	@rm -rf Payload dist && mkdir -p Payload dist
+	@cp -R "$$(find build/ios -name 'AquaCard.app' -type d | head -1)" Payload/
+	@zip -qr dist/AquaCard.ipa Payload && rm -rf Payload
+	@echo "IPA: dist/AquaCard.ipa (неподписанная — ставить через SideStore)"
+
 ## tasks: показать все доступные Gradle-задачи
 .PHONY: tasks
 tasks:

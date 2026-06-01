@@ -1,6 +1,11 @@
 # AquaCard — Amusement IC & Aime NFC Emulator for AquaDX
 
-**AquaCard** — это полностью нативное Android-приложение на Kotlin, Jetpack Compose и Room, предназначенное для хранения, управления и беспроводной NFC-эмуляции карт Amusement IC и Sega Aime для приватного сервера **AquaDX** / **AquaNet**.
+**AquaCard** — приложение для хранения, управления и беспроводной NFC-эмуляции карт Amusement IC и Sega Aime для приватного сервера **AquaDX** / **AquaNet**.
+
+- **Android** — нативный клиент на Kotlin, Jetpack Compose и Room с полноценной HCE-F эмуляцией карты.
+- **iOS** — нативный клиент на SwiftUI (просмотр профиля, генерация и хранение карт; аппаратная NFC-эмуляция FeliCa на iOS недоступна).
+
+> 📦 Готовые сборки `.apk` и `.ipa` — на вкладке [**Releases**](../../releases). Установка iOS-сборки — через [SideStore](https://sidestore.io) (см. раздел [Установка](#-установка)).
 
 ## 🚀 Описание архитектуры и возможностей
 
@@ -35,6 +40,11 @@
 │       │   ├── data/         # Room БД + Retrofit-клиент AquaDX
 │       │   └── ui/           # Jetpack Compose экраны и тема
 │       └── test/             # JVM юнит-тесты (крипто, формат, профиль)
+├── iosApp/                   # iOS-модуль (SwiftUI)
+│   ├── AquaCard/             # Исходники: профиль, карты, тема, сетевой клиент
+│   ├── AquaCardTests/        # XCTest юнит-тесты
+│   └── AquaCard.xcodeproj/
+├── .github/workflows/        # CI: сборка apk+ipa и публикация в Releases
 ├── gradle/                   # Version Catalog (libs.versions.toml) + wrapper
 ├── docs/                     # Спецификации, API, дизайн-планы
 ├── build.gradle.kts          # Корневой Gradle-конфиг
@@ -70,6 +80,46 @@ make help      # список всех целей
 
 APK появится в `app/build/outputs/apk/debug/app-debug.apk`.
 Юнит-тесты (`CryptoTest.kt`, `CardFormatTest.kt` и др.) проверяют криптографию на соответствие эталонным тест-векторам.
+
+### iOS (Xcode)
+
+```bash
+open iosApp/AquaCard.xcodeproj          # открыть в Xcode
+# или из командной строки:
+make ios-build                          # сборка под симулятор
+make ios-test                           # XCTest юнит-тесты
+make ipa                                # собрать неподписанную .ipa -> dist/
+```
+
+Для запуска на своём устройстве в Xcode откройте таргет **AquaCard → Signing & Capabilities**,
+включите **Automatically manage signing** и выберите свою команду (Personal Team бесплатного Apple ID).
+
+## 📲 Установка
+
+Готовые пакеты публикуются автоматически на вкладке [**Releases**](../../releases)
+(CI собирает их из тега `vX.Y.Z`).
+
+### Android (.apk)
+
+1. Скачайте `AquaCard-vX.Y.Z.apk` из Releases.
+2. Откройте файл на телефоне, разрешите **«Установка из неизвестных источников»** для браузера/проводника.
+3. Установите и откройте.
+
+### iOS (.ipa) через SideStore
+
+IPA из Releases **не подписана** — она устанавливается через [**SideStore**](https://sidestore.io),
+который переподписывает её вашим Apple ID прямо на устройстве (бесплатно, без Mac рядом).
+
+1. Установите SideStore по официальной инструкции: **<https://sidestore.io>**
+   (потребуется один раз настроить через компьютер; дальше переподпись идёт сама по Wi-Fi).
+2. Скачайте `AquaCard-vX.Y.Z.ipa` из Releases на устройство.
+3. В SideStore: **My Apps → +** → выберите скачанный `.ipa`.
+4. SideStore подпишет и установит приложение; он же будет автоматически
+   продлевать подпись до истечения 7-дневного лимита бесплатного сертификата —
+   фактически приложение работает бессрочно.
+
+> Альтернатива — [AltStore](https://altstore.io) (тот же принцип, но переподпись требует включённого компьютера в той же сети).
+> На старых версиях iOS (≤ 16.6.1) можно использовать [TrollStore](https://ios.cfw.guide/installing-trollstore/) — постоянная подпись без 7-дневного лимита.
 
 ## 📚 Документация
 
