@@ -51,16 +51,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.app || true
+      - name: Select latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
 
-      - name: Build unsigned .app
+      - name: Build unsigned .app (device, no simulator runtime needed)
         run: |
           xcodebuild \
             -project iosApp/AquaCard.xcodeproj \
             -scheme AquaCard \
             -configuration Release \
-            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
             -derivedDataPath build/ios \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
@@ -70,8 +72,10 @@ jobs:
       - name: Package .ipa
         run: |
           mkdir -p dist Payload
-          APP_PATH="$(find build/ios -name 'AquaCard.app' -type d | head -1)"
-          test -n "$APP_PATH" || { echo "AquaCard.app not found"; exit 1; }
+          APP_PATH="$(find build/ios -path '*Release-iphoneos/AquaCard.app' -type d | head -1)"
+          if [ -z "$APP_PATH" ]; then
+            echo "AquaCard.app not found; searched .app dirs:"; find build/ios -name '*.app' -type d; exit 1
+          fi
           cp -R "$APP_PATH" Payload/
           zip -r "dist/AquaCard-${GITHUB_REF_NAME}.ipa" Payload >/dev/null
           rm -rf Payload
