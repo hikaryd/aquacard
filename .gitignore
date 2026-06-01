@@ -21,6 +21,22 @@ capture.png
 # ──────────────── Kotlin ────────────────
 .kotlin/
 
+# ──────────────── iOS / Xcode ────────────────
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+DerivedData/
+build/
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.mobileprovision
+*.p12
+iosApp/Pods/
+
+# ──────────────── Release / dist artifacts ────────────────
+dist/
+
 # ──────────────── macOS ────────────────
 .DS_Store
 .AppleDouble
@@ -40,4 +56,5 @@ keystore.properties
 
 # ──────────────── AI / agent tooling (local only) ────────────────
 .omc/
+.omx/
 .claude/settings.local.json
