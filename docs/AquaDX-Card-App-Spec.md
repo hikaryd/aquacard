@@ -1,77 +1,75 @@
 # Спецификация: Android-приложение для хранения и NFC-эмуляции карт AquaDX (Amusement IC / Aime)
 
-> Документ основан на полном реверс-инжиниринге `eamemu_ex.signed.apk` (`tk.nulldori.eamemu`)
-> и на исследовании исходников AquaDX (`MewoLab/AquaDX`), segatools, AIC Pico и официальной
-> документации Android HCE-F + bsnk.me (allnet/aimedb/amusement_ic).
-> Все алгоритмы проверены тест-векторами (см. §12). Версия: 2026-05-30.
+> На основе реверс-инжиниринга `eamemu_ex.signed.apk` (`tk.nulldori.eamemu`),
+> исходников AquaDX (`MewoLab/AquaDX`), segatools, AIC Pico,
+> документации Android HCE-F и bsnk.me (allnet/aimedb/amusement_ic).
+> Алгоритмы проверены тест-векторами (§9).
 
 ---
 
-## 0. TL;DR (самое главное)
+## 0. Кратко
 
-1. **Карта для ридера = это только 8-байтный FeliCa IDm.** Аркадный ридер опознаёт карту по IDm,
-   полученному при polling. Никакого чтения блоков (Read Without Encryption) не требуется.
-2. **Телефон отдаёт IDm через Android HCE-F.** Жёсткие ограничения платформы:
+1. **Карта для ридера — это только 8-байтный FeliCa IDm.** Аркадный ридер опознаёт карту по IDm,
+   полученному при polling. Чтение блоков (Read Without Encryption) не требуется.
+2. **Телефон отдаёт IDm через Android HCE-F.** Ограничения платформы:
    System Code обязан быть в диапазоне `4000`–`4FFF` (eamemu использует `4000`),
-   NFCID2 (= IDm) обязан начинаться с `02FE`. → **Идеальный клон физической карты невозможен**
-   (у настоящих карт префикс производителя `012E`, а телефон вынужден слать `02FE`).
-3. **AquaDX опознаёт карту так:** `access_code = decimal(IDm как знаковый int64).padStart(20)`.
-   Это детерминированно (в отличие от настоящего SEGA, где маппинг — это таблица).
-4. **Эмуляции IDm достаточно для РАСПОЗНАВАНИЯ, но НЕ для ВХОДА в профиль.**
+   NFCID2 (= IDm) обязан начинаться с `02FE`. Байт-в-байт клон физической карты невозможен:
+   у настоящих карт префикс производителя `012E`, у HCE-F телефона — `02FE`.
+3. **AquaDX вычисляет access_code как** `decimal(IDm как знаковый int64).padStart(20)`.
+   Это детерминированная формула, в отличие от настоящего SEGA, где маппинг реализован таблицей.
+4. **Эмуляции IDm достаточно для распознавания карты, но не для входа в профиль.**
    FeliCa-путь AquaDX не создаёт карту автоматически: при неизвестном IDm возвращается `-1`.
-   → access_code эмулируемой карты нужно заранее **зарегистрировать/привязать** на сайте AquaDX.
-5. **Профиль с AquaDX тянется по username через публичный API без авторизации**
-   (`GET /aqua/api/v2/game/<game>/user-summary?username=...`).
-6. **Главное узкое место — поддержка HCE-F устройством.** Это есть в основном у японских/корейских
+   access_code эмулируемой карты нужно заранее привязать к аккаунту на сайте AquaDX.
+5. Профиль тянется по username через публичный API без авторизации:
+   `GET /aqua/api/v2/game/<game>/user-summary?username=...`.
+6. **Основное ограничение — поддержка HCE-F устройством.** Она есть в основном у японских/корейских
    телефонов с FeliCa-чипом Sony (Galaxy Note8/9/S10 «N», LG V30, Xperia JP). Большинство
-   «глобальных» телефонов и Pixel — **не поддерживают**.
-7. **Konami ID (16 символов base32)** к AquaDX отношения не имеет — это идентификатор игр Konami.
-   eamemu его вычисляет только для показа. Алгоритм разобран и проверен (§9.3), но для AquaDX не нужен.
+   глобальных SKU и Pixel не поддерживают HCE-F.
+7. **Konami ID (16 символов base32)** к AquaDX не относится — это идентификатор игр Konami.
+   eamemu вычисляет его только для отображения. Алгоритм разобран и проверен (§9.3), но для AquaDX не нужен.
 
 ---
 
 ## 1. Экосистема карт: три независимых пространства идентификаторов
 
-Это ключ к пониманию всей задачи. На одной физической карте Amusement IC живут **три разных
-идентификатора в трёх несвязанных формулой пространствах**:
+На одной физической карте Amusement IC присутствуют три разных идентификатора в трёх независимых пространствах:
 
 | # | Идентификатор | Формат | Кто использует | Как связан с IDm |
 |---|---|---|---|---|
 | 1 | **FeliCa IDm** | 8 байт = 16 hex | Все ридеры (читается при polling) | — (это и есть базовый ID) |
-| 2 | **SEGA Access Code** | 20 десятичных цифр | SEGA-игры (maimai/CHUNITHM/…), **AquaDX** | На настоящем железе — таблица AiMeDB. **В AquaDX — `decimal(IDm)`** |
+| 2 | **SEGA Access Code** | 20 десятичных цифр | SEGA-игры (maimai/CHUNITHM/…), AquaDX | На настоящем железе — таблица AiMeDB. В AquaDX — `decimal(IDm)` |
 | 3 | **Konami Card ID** | 16 символов base32 | Игры Konami (eAmusement) | Алгоритмически (3DES), см. §9.3 |
 
 ### 1.1. FeliCa IDm
 - 8 байт: `[2 байта manufacturer][6 байт serial]`.
-- У **настоящих** Amusement IC карт manufacturer = `01 2E` (десятично 11777). Серийник делится на
+- У настоящих Amusement IC карт manufacturer = `01 2E` (десятично 11777). Серийник делится на
   ChipCode(1) / OSVer(1) / Product(2) / Date(2) / SerialOfDay(2).
-- У **эмулируемой через HCE-F** карты IDm вынужденно начинается с `02FE` (ограничение Android).
-  Это легитимный префикс NFC-Forum Type-3-Tag, ридер его принимает, но это **не** заводской ID
-  настоящей карты → байт-в-байт клонировать физическую карту нельзя.
-- Реальная FeliCa-система карт = `0x88B4` (FeliCa Lite/Lite-S). Ридеры опрашивают **wildcard
-  `0xFFFF`**, и карта отвечает своим System Code. `4000` — это **только** HCE-F-конвенция Android,
+- У эмулируемой через HCE-F карты IDm вынужденно начинается с `02FE` (ограничение Android).
+  Это легитимный префикс NFC-Forum Type-3-Tag, ридер его принимает, но это не заводской ID
+  настоящей карты — байт-в-байт клонировать физическую карту нельзя.
+- Реальная FeliCa-система карт = `0x88B4` (FeliCa Lite/Lite-S). Ридеры опрашивают wildcard
+  `0xFFFF`, и карта отвечает своим System Code. `4000` — это только HCE-F-конвенция Android,
   на которую HCE-сервис отвечает на wildcard-опрос.
 
 ### 1.2. SEGA Access Code (20 цифр)
 - Структура (на физических картах): `[company 3][encoded 12][CRC16 5]`.
   Коды компаний: `500/501`=SEGA, `510`=Bandai Namco, `520`=Konami, `530`=Taito, `0103 5…`=AiMe Mobile.
 - На физических картах хранится **зашифрованным в блоке SPAD0** (подстановочный шифр на 9 S-box).
-- **Важно:** на настоящем железе **нет формулы** IDm → access code; это таблица в AiMeDB.
-- **Но в AquaDX (и minime) формула есть и она тривиальна** (см. §4).
+- На настоящем железе нет формулы IDm → access code; это таблица в AiMeDB.
+- В AquaDX (и minime) формула есть и она тривиальна (см. §4).
 
 ### 1.3. Konami Card ID (16 символов base32)
 - Алфавит `0123456789ABCDEFGHJKLMNPRSTUWXYZ` (без I/O/Q/V).
 - Выводится из IDm 3DES-шифрованием. Это то, что считает `CardConvModule` в eamemu.
-- **К SEGA/AquaDX не относится.** Нужен, только если хотите показывать пользователю
-  «номер карты Konami». Алгоритм полностью разобран и проверен — см. §9.3.
+- К SEGA/AquaDX не относится. Нужен только для отображения «номера карты Konami». Алгоритм разобран и проверен — см. §9.3.
 
 ---
 
 ## 2. Что такое eamemu и что из него взять (результат реверса)
 
-`eamemu_ex.signed.apk` → пакет **`tk.nulldori.eamemu`** («eAMEMu»), приложение на **React Native**.
-Это **эмулятор карт e-amusement/Amusement IC через Android HCE-F**. Сетевой интеграции с сервером
-**нет** (это локальный менеджер карт + эмулятор). Структура:
+`eamemu_ex.signed.apk` → пакет `tk.nulldori.eamemu` («eAMEMu»), приложение на React Native.
+Эмулятор карт e-amusement/Amusement IC через Android HCE-F. Сетевой интеграции с сервером
+нет (локальный менеджер карт + эмулятор). Структура:
 
 - JS-бандл (`assets/index.android.bundle`) — UI и оркестрация.
 - Нативные модули (Kotlin):
@@ -81,23 +79,23 @@
 
 ### 2.1. Модель данных eamemu
 - Хранилище: `AsyncStorage`, ключ `'cards'` → JSON-массив.
-- Объект карты: **`{ name, sid, uid, image }`**
-  - `sid` — IDm, 16 hex, **всегда префикс `02FE`** (UI фиксирует `02FE`, пользователь вводит 12 hex);
+- Объект карты: `{ name, sid, uid, image }`
+  - `sid` — IDm, 16 hex, всегда префикс `02FE` (UI фиксирует `02FE`, пользователь вводит 12 hex);
   - `uid` — вычисленный Konami ID (для показа);
   - `name`, `image` — имя и фоновая картинка.
 - «Random Generate» = `02FE` + 12 случайных hex.
 
-### 2.2. HCE-F-механизм eamemu (это перенимаем 1:1)
+### 2.2. HCE-F-механизм eamemu
 - `AndroidManifest`: `uses-feature android.hardware.nfc.hcef` (required), сервис с
   `BIND_NFC_SERVICE` + intent `android.nfc.cardemulation.action.HOST_NFCF_SERVICE` + meta `@xml/nfc_setting`.
 - `nfc_setting.xml`: `<system-code-filter name="4000"/>`, `<nfcid2-filter name="null"/>` (NFCID2 динамический).
 - `HcefModule`:
   - `registerSystemCodeForService(component, "4000")`;
-  - `setNfcid2ForService(component, SID)` — SID валидируется: длина 16, hex, **префикс `02FE`**;
+  - `setNfcid2ForService(component, SID)` — SID валидируется: длина 16, hex, префикс `02FE`;
   - `enableService()` / `disableService()` по lifecycle (foreground-only).
-- `eAMEMuService.processNfcFPacket`: реализует **только** FeliCa Request Response
+- `eAMEMuService.processNfcFPacket`: реализует только FeliCa Request Response
   (cmd `0x04` → ответ `0x05`: `[0x0B][0x05][IDm 8B][mode=0x00]`). Polling обрабатывает сам фреймворк.
-  **Read/Write Without Encryption не реализованы** — и этого достаточно.
+  Read/Write Without Encryption не реализованы — и этого достаточно.
 
 ---
 
@@ -110,49 +108,49 @@
 ```
 [Ридер/segatools] --IDm--> [aimedb, TCP 22345] --ext_id--> [игра, HTTP :80] --профиль по ext_id-->
 ```
-- **aimedb (TCP 22345):** принимает IDm, выдаёт `ext_id` (идентификатор профиля) или `-1`.
-- **Игра (HTTP :80):** `UserLogin`/`GetUserData` по `ext_id` (`findByCardExtId`).
+- aimedb (TCP 22345): принимает IDm, выдаёт `ext_id` (идентификатор профиля) или `-1`.
+- Игра (HTTP :80): `UserLogin`/`GetUserData` по `ext_id` (`findByCardExtId`).
 - Таблица `sega_card`: ключи `luid` (строка access code) и `ext_id` (uint32, профиль). Колонки IDm нет.
 
 ### 3.2. Ключевой факт — формула IDm → access code в AquaDX
 `AimeDB.doFelicaLookupV2` (тип `0x11`):
 ```kotlin
 // псевдокод по исходнику AquaDX
-val idm: Long = readLongBE(msg, 0x30)            // 8 байт IDm как ЗНАКОВЫЙ int64
+val idm: Long = readLongBE(msg, 0x30)            // 8 байт IDm как знаковый int64
 val accessCode = idm.toString().replace("-", "").padStart(20, '0')
-val card = cardRepo.findByLuid(accessCode)       // чистый lookup в БД
-val extId = card?.extId ?: -1                    // -1 при промахе, БЕЗ авто-создания
+val card = cardRepo.findByLuid(accessCode)       // lookup в БД
+val extId = card?.extId ?: -1                    // -1 при промахе, без авто-создания
 ```
-→ **`access_code = decimal(IDm).padStart(20)`** (детерминированно). Это НЕ алгоритм Konami и
-НЕ настоящая таблица SEGA — это специфика AquaDX/minime.
+`access_code = decimal(IDm).padStart(20)` (детерминированно). Это не алгоритм Konami и
+не таблица SEGA — это специфика AquaDX/minime.
 
 > Нюанс: для IDm с префиксом `02FE` старший байт `0x02` → значение положительное → `replace("-","")`
 > ни на что не влияет. Для отрицательных (старший бит = 1) знак вырезается — нам не грозит.
 
 ### 3.3. Регистрация: почему эмуляции мало для входа
-- FeliCa-путь (`doFelicaLookupV2`) при неизвестном IDm возвращает `-1` и **карту не заводит**.
-- Единственные пути регистрации работают с **20-значным access code**, не с сырым IDm:
+- FeliCa-путь (`doFelicaLookupV2`) при неизвестном IDm возвращает `-1` и карту не создаёт.
+- Единственные пути регистрации работают с 20-значным access code, не с сырым IDm:
   `CardService.registerByAccessCode`, доступный через web `POST /api/v2/card/link`, `Frontier.kt`,
   `Fedy.kt`, либо классический Aime `doRegister` (cmd `0x05`).
-- **Вывод:** чтобы эмулируемая карта логинилась в нужный профиль, надо заранее
-  **привязать её access_code** (`decimal(IDm)`) к аккаунту через сайт AquaDX.
+- Чтобы эмулируемая карта логинилась в нужный профиль, надо заранее
+  привязать её `access_code` (`decimal(IDm)`) к аккаунту через сайт AquaDX.
 
 ---
 
 ## 4. Веб-API AquaNet (для подтягивания профиля и привязки карты)
 
-- **Base URL:** `https://aquadx.net/aqua`, эндпоинты под `/api/v2`. **Делайте base URL настраиваемым**
+- Base URL: `https://aquadx.net/aqua`, эндпоинты под `/api/v2`. Base URL нужно делать настраиваемым
   (self-hosted инстансы переопределяют `VITE_AQUA_HOST`).
-- **Конвенции** (`ext/Ext.kt`): большинство эндпоинтов = `@RequestMapping` (принимают GET и POST),
+- Конвенции (`ext/Ext.kt`): большинство эндпоинтов = `@RequestMapping` (принимают GET и POST),
   параметры — query или form (`@RequestParam`); JSON-тело (`@RequestBody`) только у `transfer`/`import`.
   Официальный фронт (Svelte SDK `AquaNet/src/libs/sdk.ts`) всегда POST-ит form-encoded.
 
 ### 4.1. Аутентификация (нужна только для приватных операций)
 - `POST /api/v2/user/login` (`email` (или username), `password`, `turnstile`) → `{ token }`.
-- **Cloudflare Turnstile** (капча) валидируется сервером и **блокирует чисто программный логин** →
+- Cloudflare Turnstile (капча) валидируется сервером и блокирует программный логин →
   для авторизации нужен WebView с капчей.
-- Токен (JWT, subject = UUID сессии) передаётся как **обычный параметр запроса** на каждый
-  приватный вызов (НЕ заголовок Authorization, НЕ cookie). Невалидный/отсутствующий → HTTP 400.
+- Токен (JWT, subject = UUID сессии) передаётся как обычный параметр запроса на каждый
+  приватный вызов (не заголовок Authorization, не cookie). Невалидный/отсутствующий → HTTP 400.
 
 ### 4.2. Публичный профиль по username (без авторизации — основной путь «подтягивания»)
 - `GET /api/v2/game/<game>/user-summary?username=NAME` → `GenericGameSummary`:
@@ -165,14 +163,14 @@ val extId = card?.extId ?: -1                    // -1 при промахе, Б
 - Также публично по username: `/trend`, `/recent`, `/user-detail`,
   `/game/mai2/user-rating`, `/game/chu3/user-rating`, `/game/<game>/ranking?page=N` (100/стр).
 - Статические метаданные песен: `https://aquadx.net/d/<game>/00/all-music.json`.
-- **CORS открыт** (`allowedOrigins=*`), что удобно для мобильного/веб-клиента.
+- CORS открыт (`allowedOrigins=*`), что удобно для мобильного/веб-клиента.
 
 ### 4.3. Привязка карты к аккаунту (приватно, нужен токен)
 - `POST /api/v2/card/link` (`token`, `cardId` = 20-значный access code, `migrate` = `mai2,chu3,…`).
   Неизвестный код → `registerByAccessCode`; существующий непривязанный → привязка к аккаунту
   и перенацеливание профилей на `ghostCard`. Отвязка: `POST /api/v2/card/unlink`.
-- **Публичного lookup `access_code → профиль` нет** (`POST /api/v2/card/summary` требует
-  токен-владелец; чужая карта → 404). Поэтому «подтягивание» делаем по **username**, а не по IDm.
+- Публичного lookup `access_code → профиль` нет (`POST /api/v2/card/summary` требует
+  токен-владелец; чужая карта → 404). Поэтому подтягивание профиля делается по username, а не по IDm.
 
 ---
 
@@ -228,15 +226,15 @@ app/
 </host-nfcf-service>
 ```
 
-### 6.2. Жёсткие ограничения платформы (проверено по AOSP `NfcFCardEmulation`)
-- **System Code:** `4000`–`4FFF`, исключая `4*FF`. Использовать `"4000"`.
-- **NFCID2 (= IDm):** строго `02FE000000000000`–`02FEFFFFFFFFFFFF` (16 hex, префикс `02FE`).
-  `setNfcid2ForService` при невалидном значении просто вернёт `false` / не зарегистрирует.
-- Один сервис = **один** System Code и **один** NFCID2 одновременно.
-  → Для нескольких карт NFCID2 переключается динамически перед эмуляцией.
-- `processNfcFPacket` выполняется на **main thread**; либо сразу вернуть ответ, либо `null` и позже
+### 6.2. Ограничения платформы (по AOSP `NfcFCardEmulation`)
+- System Code: `4000`–`4FFF`, исключая `4*FF`. Использовать `"4000"`.
+- NFCID2 (= IDm): строго `02FE000000000000`–`02FEFFFFFFFFFFFF` (16 hex, префикс `02FE`).
+  `setNfcid2ForService` при невалидном значении вернёт `false` и не зарегистрирует.
+- Один сервис = один System Code и один NFCID2 одновременно.
+  Для нескольких карт NFCID2 переключается динамически перед эмуляцией.
+- `processNfcFPacket` выполняется на main thread; либо сразу вернуть ответ, либо `null` и позже
   `sendResponsePacket`. После выбора карты все кадры на её NFCID2 идут сюда до разрыва линка (`onDeactivated`).
-- **Foreground-only:** эмуляция активна, пока активити на экране; на Samsung выставить обработчик
+- Foreground-only: эмуляция активна, пока активити на экране; на Samsung выставить обработчик
   NFC-оплаты по умолчанию в «Android OS», другие card-emulation приложения (транспорт/T-money) закрыть.
 
 ### 6.3. Контроллер HCE-F
@@ -251,7 +249,7 @@ class HceController(activity: Activity) {
 
     init { nfcF.registerSystemCodeForService(component, "4000") }
 
-    /** SID = 16 hex, ОБЯЗАТЕЛЬНО начинается с 02FE */
+    /** SID = 16 hex, префикс 02FE обязателен */
     fun selectCard(sid: String): Boolean {
         require(sid.length == 16 && sid.matches(Regex("[0-9A-Fa-f]+")) && sid.uppercase().startsWith("02FE"))
         return nfcF.setNfcid2ForService(component, sid.uppercase())
@@ -261,7 +259,7 @@ class HceController(activity: Activity) {
 }
 ```
 
-### 6.4. Сервис (минимально достаточный — копия логики eamemu)
+### 6.4. Сервис (минимально достаточный, воспроизводит логику eamemu)
 ```kotlin
 class CardEmulationService : HostNfcFService() {
     override fun processNfcFPacket(command: ByteArray, extras: Bundle?): ByteArray? {
@@ -275,9 +273,9 @@ class CardEmulationService : HostNfcFService() {
     override fun onDeactivated(reason: Int) {}
 }
 ```
-> Опционально для большей совместимости можно дополнительно реализовать FeliCa Polling-ответ и
-> Read Without Encryption (cmd `0x06`→`0x07`) с фейковым SPAD0 — **но для AquaDX/AIME это не нужно**
-> (ридер опознаёт по IDm). Добавлять только если конкретный ридер этого потребует (см. §11, открытые вопросы).
+> Опционально для большей совместимости можно реализовать FeliCa Polling-ответ и
+> Read Without Encryption (cmd `0x06`→`0x07`) с фейковым SPAD0 — для AquaDX/AIME это не нужно
+> (ридер опознаёт по IDm). Добавлять только если конкретный ридер этого потребует (см. §13, открытые вопросы).
 
 ### 6.5. Поток эмуляции (UI)
 1. Проверить `isSupported()`. Если нет — показать экран несовместимости (см. §11) и не пускать дальше.
@@ -303,10 +301,10 @@ class CardEmulationService : HostNfcFService() {
 ```
 - Хранилище: Room (или DataStore для простого случая). Импорт/экспорт JSON, совместимый по полям
   `{name, sid, image}` с eamemu — приятный бонус для миграции.
-- **Безопасность:** IDm — это, по сути, «номер карты». Шифровать БД (SQLCipher) и/или прятать значения
+- Безопасность: IDm — это номер карты. Шифровать БД (SQLCipher) и/или прятать значения
   за биометрией. `android:allowBackup="false"`.
-- **Генерация новой карты:** `"02FE" + 12 случайных hex` (CSPRNG). Перед использованием — проверить
-  через AquaDX, что такой access_code ещё не занят (опционально).
+- Генерация новой карты: `"02FE" + 12 случайных hex` (CSPRNG). Перед использованием желательно
+  проверить через AquaDX, что такой access_code ещё не занят (опционально).
 
 ---
 
@@ -328,8 +326,8 @@ suspend fun fetchSummary(base: String, game: String, username: String): GameSumm
     http.get("$base/api/v2/game/$game/user-summary") { parameter("username", username) }.body()
 // game ∈ {mai2, chu3, ongeki, wacca}; base настраиваемый, по умолчанию https://aquadx.net/aqua
 ```
-- Пользователь указывает свой **username** AquaNet (вручную или через QR). Привязки по IDm/access_code
-  публично нет — поэтому ключ именно username.
+- Пользователь указывает свой username AquaNet (вручную или через QR). Публичного lookup по IDm/access_code
+  нет — поэтому ключ именно username.
 - Кэшировать, не долбить часто (на реверс-прокси возможны rate-limit/WAF, в репозитории не видны).
 
 ---
@@ -337,10 +335,10 @@ suspend fun fetchSummary(base: String, game: String, username: String): GameSumm
 ## 9. Алгоритмы
 
 ### 9.1. Что нужно для AquaDX
-Минимум: **IDm** (эмуляция) и **access_code = decimal(IDm)** (регистрация). Konami ID — опционально.
+Минимум: IDm (эмуляция) и `access_code = decimal(IDm)` (регистрация). Konami ID — опционально.
 
-### 9.2. IDm → AquaDX access code (точная формула)
-Точно как в `AimeDB.doFelicaLookupV2`: IDm читается как **знаковый** `Long`, берётся десятичная
+### 9.2. IDm → AquaDX access code
+Воспроизводит `AimeDB.doFelicaLookupV2`: IDm читается как знаковый `Long`, берётся десятичная
 строка, вырезается знак `-`, дополняется нулями до 20 символов.
 ```kotlin
 fun aquaAccessCode(idmHex: String): String {
@@ -354,11 +352,11 @@ fun aquaAccessCode(idmHex: String): String {
 Примеры (проверено): `02FE000000000001` → `00215609832160362497`;
 `02FEDEADBEEF1234` → `00215854669974409780`.
 
-### 9.3. IDm ↔ Konami Card ID (опционально, для показа «номера карты Konami»)
-**Шифр:** `DESede/ECB/NoPadding` (3DES-EDE), но с **поэлементно удвоенным ключом**.
-Стандартный 3DES со «обычным» ключом даёт неверный результат (eamemu/игровой код используют
+### 9.3. IDm ↔ Konami Card ID (опционально)
+Шифр: `DESede/ECB/NoPadding` (3DES-EDE) с поэлементно удвоенным ключом.
+Стандартный 3DES с необработанным ключом даёт неверный результат. eamemu/игровой код используют
 вариант, где DES читает биты 0–6 сырого ключа; удвоение байта сдвигает их в позиции 1–7,
-где их читает стандартный DES — поэтому стандартная библиотека + удвоенный ключ совпадает 1:1).
+где их читает стандартный DES — поэтому стандартная библиотека + удвоенный ключ даёт совпадающий результат.
 
 ```kotlin
 object KonamiId {
@@ -394,7 +392,7 @@ object KonamiId {
     // checksum: chk = Σ d[i]*((i%3)+1), i=0..14; while chk>31: chk=(chk>>5)+(chk&31)
 }
 ```
-**Проверенные тест-векторы** (совпадают с каноном eamuse.bsnk.me и с eamemu):
+Тест-векторы (совпадают с eamuse.bsnk.me и eamemu):
 
 | IDm | card_type | Konami ID |
 |---|---|---|
@@ -412,7 +410,7 @@ object KonamiId {
 
 ## 10. UX-рекомендации
 - Первый запуск: тест HCE-F → если нет, честно объяснить и предложить альтернативы (§11).
-- Экран карты: имя, оформление, **показать и IDm, и AquaDX access_code, и (опц.) Konami ID** с кнопкой «копировать».
+- Экран карты: имя, оформление, IDm, AquaDX access_code и (опц.) Konami ID с кнопкой «копировать».
 - Кнопка «Привязать к AquaDX»: WebView-логин (Turnstile) → `card/link`.
 - Экран профиля: ввод/выбор username → `user-summary` (рейтинг, плеи, последние треки).
 - Эмуляция: крупный полноэкранный режим «приложите к ридеру», подсказки про чехол/антенну/foreground.
@@ -422,8 +420,8 @@ object KonamiId {
 
 ## 11. Совместимость устройств и ридеров (реалистично) + альтернативы
 
-### 11.1. Поддержка HCE-F устройством — главный риск
-- HCE-F требует FeliCa-middleware Sony в NFC-стеке. **NFC ≠ FeliCa.**
+### 11.1. Поддержка HCE-F устройством
+- HCE-F требует FeliCa-middleware Sony в NFC-стеке. NFC и FeliCa — не одно и то же.
 - Подтверждённо работают (по сообществу eAMEMu, «ориентир»): Galaxy Note8 `SM-N950N`, Note9 `SM-N960N`,
   LG V30 `LGM-V300L`, Galaxy S10 5G `SM-G977N` — корейские «N»-SKU; японские Sony/Sharp/Samsung.
 - Не работают: большинство глобальных SKU, Pixel (Google не лицензировал FeliCa-middleware),
@@ -433,15 +431,15 @@ object KonamiId {
 
 ### 11.2. Приём телефона ридером
 - Konami e-amusement: eAMEMu реально работает «в полях».
-- SEGA AIC-кабинеты / AquaDX-сетапы: распознают по IDm, должно работать; **прямых пользовательских
-  подтверждений «SEGA-кабинет принял HCE-F телефон» в этом исследовании не нашлось** (см. §13).
+- SEGA AIC-кабинеты / AquaDX-сетапы: распознают по IDm, должно работать; прямых пользовательских
+  подтверждений «SEGA-кабинет принял HCE-F телефон» в данном исследовании не нашлось (см. §13).
 - Кэвиаты: задержка HCE-F ~0.5–1 c (приложить и подержать), чехол/позиция антенны критичны,
   только foreground, закрыть другие card-emulation приложения.
 
 ### 11.3. Альтернативы, если HCE-F недоступен
-- **Запись на пустую FeliCa Lite-S — НЕ клон:** заводской IDm read-only. Нельзя записать произвольный IDm.
-- **Flipper Zero:** читает/парсит AIC (PR #4259), эмуляция есть, но кросс-вендорно «как повезёт» (issue #3871).
-- **PC + segatools:** AIC Pico (PN532/PN5180), PaSoRi/ACR122U + `aimeio-pcsc`/`aimeio-cardreader`.
+- Запись на пустую FeliCa Lite-S — не клон: заводской IDm read-only, записать произвольный IDm нельзя.
+- Flipper Zero: читает/парсит AIC (PR #4259), эмуляция есть, но кросс-вендорная совместимость непредсказуема (issue #3871).
+- PC + segatools: AIC Pico (PN532/PN5180), PaSoRi/ACR122U + `aimeio-pcsc`/`aimeio-cardreader`.
   Для AquaDX проще всего: вписать access_code в `aime.txt` или привязать на сайте — вообще без RF.
 
 ---
@@ -460,13 +458,13 @@ object KonamiId {
 ---
 
 ## 13. Риски, ограничения, открытые вопросы
-- ⚠️ **HCE-F есть у меньшинства телефонов** — это ограничивает аудиторию сильнее всего.
-- ⚠️ **Идеальный клон физической карты невозможен** (`02FE` vs `012E`). Эмулируемая карта — всегда «новая».
-- ⚠️ **Вход требует предварительной регистрации** access_code на стороне AquaDX (FeliCa-путь не авто-создаёт).
-- ⚠️ **Turnstile** блокирует программный логин → авторизация только через WebView. Read-only профиль — без неё.
+- HCE-F поддерживает меньшинство телефонов — это основное ограничение аудитории.
+- Байт-в-байт клон физической карты невозможен (`02FE` vs `012E`). Эмулируемая карта всегда «новая».
+- Вход требует предварительной регистрации access_code на стороне AquaDX (FeliCa-путь не создаёт карту автоматически).
+- Turnstile блокирует программный логин → авторизация только через WebView. Read-only профиль доступен без неё.
 - Открытые вопросы для проверки на железе:
-  1. Принимают ли реальные **SEGA AIC**-кабинеты (не только Konami) HCE-F телефон с `02FE` IDm?
-  2. Какой **PMm/OS-version** байт фреймворк Android кладёт в SENSF_RES, и проходит ли он проверку
+  1. Принимают ли реальные SEGA AIC-кабинеты (не только Konami) HCE-F телефон с `02FE` IDm?
+  2. Какой PMm/OS-version байт фреймворк Android кладёт в SENSF_RES, и проходит ли он проверку
      AquaDX/AiMeDB (иначе — путь mobile-регистрации). Снять Proxmark-сниффом.
   3. Требует ли конкретная игра пост-polling команду (Read Without Encryption SPAD0)? eamemu её не делает
      и работает у Konami; на всякий случай заложить опциональную реализацию (§6.4).
