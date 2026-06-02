@@ -17,6 +17,7 @@
 		100000000000000000000108 /* AquaProfileRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000008 /* AquaProfileRepository.swift */; };
 		100000000000000000000109 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000009 /* ContentView.swift */; };
 		100000000000000000000110 /* ProfileViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000010 /* ProfileViews.swift */; };
+		100000000000000000000120 /* ProfileDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000020 /* ProfileDetail.swift */; };
 		100000000000000000000111 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000011 /* Assets.xcassets */; };
 		100000000000000000000112 /* AquaCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100000000000000000000012 /* AquaCardTests.swift */; };
 /* End PBXBuildFile section */
@@ -42,6 +43,7 @@
 		100000000000000000000008 /* AquaProfileRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AquaProfileRepository.swift; sourceTree = "<group>"; };
 		100000000000000000000009 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		100000000000000000000010 /* ProfileViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileViews.swift; sourceTree = "<group>"; };
+		100000000000000000000020 /* ProfileDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileDetail.swift; sourceTree = "<group>"; };
 		100000000000000000000011 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		100000000000000000000012 /* AquaCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AquaCardTests.swift; sourceTree = "<group>"; };
 		100000000000000000000013 /* AquaCard.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AquaCard.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -81,6 +83,7 @@
 				100000000000000000000001 /* AquaCardApp.swift */,
 				100000000000000000000009 /* ContentView.swift */,
 				100000000000000000000010 /* ProfileViews.swift */,
+				100000000000000000000020 /* ProfileDetail.swift */,
 				100000000000000000000003 /* ProfileModels.swift */,
 				100000000000000000000005 /* AquaProfileClient.swift */,
 				100000000000000000000008 /* AquaProfileRepository.swift */,
@@ -219,6 +222,7 @@
 				100000000000000000000108 /* AquaProfileRepository.swift in Sources */,
 				100000000000000000000109 /* ContentView.swift in Sources */,
 				100000000000000000000110 /* ProfileViews.swift in Sources */,
+				100000000000000000000120 /* ProfileDetail.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -367,6 +371,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = AquaCard;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.aquadx.aquacard.ios;
@@ -389,6 +394,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = AquaCard;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.aquadx.aquacard.ios;

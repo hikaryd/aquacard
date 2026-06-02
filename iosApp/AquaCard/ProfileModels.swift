@@ -386,10 +386,50 @@ struct MusicMeta: Codable, Equatable {
     var name: String?
     var genre: String?
     var notes: [NoteLv]?
+
+    init(name: String? = nil, genre: String? = nil, notes: [NoteLv]? = nil) {
+        self.name = name
+        self.genre = genre
+        self.notes = notes
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case name, genre, notes
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        // all-music.json иногда отдаёт name числом (песня «39» → name: 39).
+        // Строгий декод String на этом падает и обнуляет весь каталог — декодим толерантно.
+        name = MusicMeta.flexibleString(container, .name)
+        genre = MusicMeta.flexibleString(container, .genre)
+        notes = try? container.decodeIfPresent([NoteLv].self, forKey: .notes)
+    }
+
+    /// Принимает значение как строку ИЛИ число, возвращая строковое представление.
+    private static func flexibleString(_ container: KeyedDecodingContainer<CodingKeys>, _ key: CodingKeys) -> String? {
+        if let value = try? container.decodeIfPresent(String.self, forKey: key) { return value }
+        if let value = try? container.decodeIfPresent(Int.self, forKey: key) { return String(value) }
+        if let value = try? container.decodeIfPresent(Double.self, forKey: key) {
+            return value == value.rounded() ? String(Int(value)) : String(value)
+        }
+        return nil
+    }
 }
 
 struct NoteLv: Codable, Equatable {
     var lv: Double?
+}
+
+/// Обёртка для поэлементного декода словаря: битый элемент становится nil,
+/// не роняя весь контейнер (одна несовместимая запись каталога не обнуляет остальные).
+struct FailableDecodable<T: Decodable>: Decodable {
+    let value: T?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        value = try? container.decode(T.self)
+    }
 }
 
 struct ProfileScore: Codable, Equatable, Identifiable {
@@ -423,25 +463,25 @@ struct RecentEntry: Codable, Equatable, Identifiable {
     var id: String { "\(musicId)-\(level)-\(playDate ?? "")-\(achievement ?? 0)" }
     var musicId: Int
     var level: Int
-    var playDate: String?
-    var achievement: Int?
-    var rank: Int?
-    var comboStatus: Int?
-    var isClear: Bool?
-    var syncStatus: Int?
-    var deluxscore: Int?
-    var beforeRating: Int?
-    var afterRating: Int?
-    var placeName: String?
-    var maxCombo: Int?
-    var totalCombo: Int?
-    var fastCount: Int?
-    var lateCount: Int?
-    var isFullCombo: Bool?
-    var isAllPerfect: Bool?
-    var trackNo: Int?
-    var judges: JudgeBreakdown?
-    var notes: NoteBreakdown?
+    var playDate: String? = nil
+    var achievement: Int? = nil
+    var rank: Int? = nil
+    var comboStatus: Int? = nil
+    var isClear: Bool? = nil
+    var syncStatus: Int? = nil
+    var deluxscore: Int? = nil
+    var beforeRating: Int? = nil
+    var afterRating: Int? = nil
+    var placeName: String? = nil
+    var maxCombo: Int? = nil
+    var totalCombo: Int? = nil
+    var fastCount: Int? = nil
+    var lateCount: Int? = nil
+    var isFullCombo: Bool? = nil
+    var isAllPerfect: Bool? = nil
+    var trackNo: Int? = nil
+    var judges: JudgeBreakdown? = nil
+    var notes: NoteBreakdown? = nil
 }
 
 struct BestEntry: Codable, Equatable, Identifiable {

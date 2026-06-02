@@ -33,10 +33,10 @@ struct AquaProfileClient {
         guard let url = URL(string: AquaAssets.allMusicURL(baseURL)) else {
             throw AquaProfileError.invalidURL
         }
-        let raw: [String: MusicMeta] = try await fetch(url)
-        return Dictionary(uniqueKeysWithValues: raw.compactMap { key, value in
-            guard let id = Int(key) else { return nil }
-            return (id, value)
+        let raw: [String: FailableDecodable<MusicMeta>] = try await fetch(url)
+        return Dictionary(uniqueKeysWithValues: raw.compactMap { key, wrapped in
+            guard let id = Int(key), let meta = wrapped.value else { return nil }
+            return (id, meta)
         })
     }
 
