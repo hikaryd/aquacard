@@ -76,6 +76,12 @@ struct ProfileScreen: View {
 
 private struct UsernamePanel: View {
     @EnvironmentObject private var model: ProfileViewModel
+    @FocusState private var usernameFocused: Bool
+
+    private func submit() {
+        usernameFocused = false
+        model.refresh()
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -87,13 +93,16 @@ private struct UsernamePanel: View {
                 TextField("username", text: $model.username)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
+                    .focused($usernameFocused)
+                    .submitLabel(.go)
+                    .onSubmit(submit)
                     .padding(12)
                     .background(AquaTheme.elevated)
                     .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     .accessibilityIdentifier("profile.username")
 
                 Button("Загрузить") {
-                    model.refresh()
+                    submit()
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(AquaTheme.primary)
@@ -112,6 +121,7 @@ private struct UsernamePanel: View {
 private struct ProfileContent: View {
     let bundle: ProfileBundle
     let baseURL: String
+    @State private var detail: ScoreDetail?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -124,7 +134,10 @@ private struct ProfileContent: View {
                 SectionTitle("Best 35", count: bundle.best.count)
                 LazyVStack(spacing: 8) {
                     ForEach(Array(bundle.best.enumerated()), id: \.element.id) { index, entry in
-                        BestRowView(index: index, entry: entry, meta: bundle.meta, baseURL: baseURL)
+                        Button { detail = entry.toScoreDetail(recent: bundle.recent) } label: {
+                            BestRowView(index: index, entry: entry, meta: bundle.meta, baseURL: baseURL)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .accessibilityIdentifier("profile.best")
@@ -134,7 +147,10 @@ private struct ProfileContent: View {
                 SectionTitle("Best 15", count: bundle.bestSecondary.count)
                 LazyVStack(spacing: 8) {
                     ForEach(Array(bundle.bestSecondary.prefix(15).enumerated()), id: \.element.id) { index, entry in
-                        BestRowView(index: index, entry: entry, meta: bundle.meta, baseURL: baseURL)
+                        Button { detail = entry.toScoreDetail(recent: bundle.recent) } label: {
+                            BestRowView(index: index, entry: entry, meta: bundle.meta, baseURL: baseURL)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -143,7 +159,10 @@ private struct ProfileContent: View {
                 SectionTitle("Недавние игры", count: bundle.recent.count)
                 LazyVStack(spacing: 8) {
                     ForEach(bundle.recent) { entry in
-                        RecentRowView(entry: entry, meta: bundle.meta, baseURL: baseURL)
+                        Button { detail = entry.toScoreDetail() } label: {
+                            RecentRowView(entry: entry, meta: bundle.meta, baseURL: baseURL)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .accessibilityIdentifier("profile.recent")
@@ -164,6 +183,9 @@ private struct ProfileContent: View {
             if !bundle.errors.isEmpty {
                 MessageBanner(message: .warning("Часть секций не загрузилась: \(bundle.errors.joined(separator: "; "))"))
             }
+        }
+        .sheet(item: $detail) { selected in
+            MusicDetailView(detail: selected, meta: bundle.meta, baseURL: baseURL)
         }
     }
 }
